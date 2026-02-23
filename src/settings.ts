@@ -199,6 +199,22 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 					})
 			);
 
+		new Setting(containerEl)
+			.setName("Save conversations to")
+			.setDesc(
+				"Folder in your vault where saved chats will be stored. Created automatically if it doesn't exist."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Zotero Chats")
+					.setValue(this.plugin.settings.saveFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.saveFolder =
+							value.trim() || "Zotero Chats";
+						await this.plugin.saveSettings();
+					})
+			);
+
 		// --- Advanced Section (collapsed) ---
 		const advancedDetails = containerEl.createEl("details");
 		advancedDetails.createEl("summary", {

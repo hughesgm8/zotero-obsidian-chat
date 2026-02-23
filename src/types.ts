@@ -25,6 +25,9 @@ export interface ZoteroMCPSettings {
 	systemPrompt: string;
 	fullTextTopN: number;
 	fullTextMaxChars: number;
+
+	// Conversations
+	saveFolder: string;
 }
 
 export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
@@ -50,6 +53,8 @@ export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
 		"Answer questions using the provided paper metadata and context. " +
 		"Always cite sources by title and author when referencing specific papers. " +
 		"If no relevant papers are found, say so honestly.",
+
+	saveFolder: "Zotero Chats",
 };
 
 export interface ChatMessage {

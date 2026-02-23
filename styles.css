@@ -49,6 +49,16 @@
 	font-size: var(--font-ui-small);
 }
 
+.zotero-chat-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.zotero-chat-save-btn {
+	color: var(--text-muted);
+}
+
 .zotero-chat-clear-btn {
 	color: var(--text-muted);
 }
@@ -149,10 +159,53 @@
 /* Input area */
 .zotero-chat-input-area {
 	display: flex;
-	gap: 8px;
+	flex-direction: column;
 	padding: 12px;
 	border-top: 1px solid var(--background-modifier-border);
+}
+
+.zotero-chat-input-row {
+	display: flex;
+	gap: 8px;
 	align-items: flex-end;
+}
+
+/* Paperclip / attach button */
+.zotero-chat-paperclip-btn {
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+.zotero-chat-paperclip-btn:hover {
+	color: var(--text-normal);
+}
+
+/* Attachment chip */
+.zotero-chat-attachment-chip-area {
+	align-items: center;
+	padding-bottom: 6px;
+}
+
+.zotero-chat-attachment-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px 2px 6px;
+	border-radius: 12px;
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.zotero-chat-attachment-remove {
+	padding: 0;
+	color: var(--text-muted);
+	line-height: 1;
+}
+
+.zotero-chat-attachment-remove:hover {
+	color: var(--text-normal);
 }
 
 .zotero-chat-input {
