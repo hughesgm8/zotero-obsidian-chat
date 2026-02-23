@@ -1,0 +1,20 @@
+{
+	"name": "zotero-mcp-chat",
+	"version": "0.1.0",
+	"description": "Query your Zotero library using natural language via MCP and LLMs",
+	"type": "module",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "node esbuild.config.mjs production"
+	},
+	"keywords": [],
+	"author": "hughesgm8",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"esbuild": "^0.24.0",
+		"obsidian": "latest",
+		"tslib": "^2.7.0",
+		"typescript": "^5.6.0"
+	}
+}

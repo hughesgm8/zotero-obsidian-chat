@@ -4,19 +4,26 @@ Maintain a system map the user can understand. The project's status is updated r
 # Project Status
 
 ## ✅ Working Well
--
+- Full plugin scaffolding (manifest, package.json, tsconfig, esbuild)
+- TypeScript compiles with zero errors, `npm run build` produces `main.js`
+- Settings tab with conditional provider fields (re-renders on dropdown change)
+- MCP server manager (auto-spawn/kill child process lifecycle)
+- MCP client (JSON-RPC 2.0 over HTTP with SSE support)
+- LLM provider abstraction (Ollama, OpenRouter, Anthropic)
+- Deterministic query orchestrator (search → metadata → LLM)
+- Sidebar chat view with markdown rendering, citations, copy button
 
 ## 🚧 In Progress
-- Initial project setup and bootstrapping
+- End-to-end testing in a real Obsidian vault (plugin has not been loaded yet)
 
 ## 📋 Planned
-- Core plugin architecture
-- Sidebar UI for chat interface
-- MCP server integration
-- Multi-model support (Claude, OpenRouter, Ollama)
+- "Test Connection" buttons in settings for MCP and LLM
+- "Smart mode" for capable models that can call MCP tools themselves
+- Model switching directly in the sidebar UI (currently settings-only)
 
 ## ⚠️ Known Issues
--
+- Plugin has not yet been tested in a live Obsidian vault
+- Step 8 of the plan (Test Connection buttons) not yet implemented
 
 # Project Spec
 
@@ -44,9 +51,29 @@ The plugin handles MCP calls directly rather than delegating tool selection to t
 ### Future Enhancement
 "Smart mode" for capable models (Claude, GPT-4) that can call MCP tools themselves, adapting to question type.
 
+## Key Files
+| File | Role |
+|------|------|
+| `src/main.ts` | Plugin entry point — lifecycle, view registration, MCP startup |
+| `src/types.ts` | All shared interfaces and defaults |
+| `src/settings.ts` | Settings tab UI |
+| `src/mcp-server.ts` | Spawns/kills the `zotero-mcp` child process |
+| `src/mcp-client.ts` | JSON-RPC 2.0 client for MCP over HTTP |
+| `src/orchestrator.ts` | search → metadata → LLM pipeline |
+| `src/chat-view.ts` | Sidebar `ItemView` with chat UI |
+| `src/llm/index.ts` | Factory that creates the right LLM provider |
+| `src/llm/llm-provider.ts` | `LLMProvider` interface |
+| `src/llm/ollama.ts` | Ollama via OpenAI-compatible endpoint |
+| `src/llm/openrouter.ts` | OpenRouter provider |
+| `src/llm/anthropic.ts` | Anthropic Messages API provider |
+
 ## Key Dependencies
 - [zotero-mcp](https://github.com/54yyyu/zotero-mcp) — handles vectorization and exposes Zotero library via MCP protocol
 - Obsidian Plugin API (TypeScript)
 
 ## UI Reference
 Modeled after the Obsidian Copilot plugin: sidebar panel, markdown-formatted responses, copy functionality, model switching in UI.
+
+## Reference Documents
+- Implementation plan: `Agent Configuration/changelogs/IMPLEMENTATION_PLAN_v0.1.0.md`
+- Changelog: `Agent Configuration/changelogs/2026-02-23.md`
