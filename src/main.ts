@@ -102,7 +102,10 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.error("Failed to start MCP server:", msg);
-			new Notice(`Zotero MCP Chat: Failed to start server — ${msg}`);
+			new Notice(
+				`Zotero MCP Chat: Could not connect to the Zotero MCP server. ${msg}`,
+				10000
+			);
 		}
 	}
 

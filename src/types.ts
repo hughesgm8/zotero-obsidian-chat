@@ -23,6 +23,8 @@ export interface ZoteroMCPSettings {
 	// Behavior
 	maxConversationHistory: number;
 	systemPrompt: string;
+	fullTextTopN: number;
+	fullTextMaxChars: number;
 }
 
 export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
@@ -41,6 +43,8 @@ export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
 	anthropicModel: "claude-sonnet-4-5-20250929",
 
 	maxConversationHistory: 6,
+	fullTextTopN: 3,
+	fullTextMaxChars: 4000,
 	systemPrompt:
 		"You are a research assistant with access to the user's Zotero library. " +
 		"Answer questions using the provided paper metadata and context. " +

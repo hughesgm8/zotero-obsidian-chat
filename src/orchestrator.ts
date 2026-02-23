@@ -52,17 +52,38 @@ export class Orchestrator {
 			}
 		}
 
-		// 4) Build context string
-		const context = this.buildContext(sources, searchResult);
+		// 4) Fetch full text for top N results
+		const fullTexts: Map<string, string> = new Map();
+		const topN = Math.min(this.settings.fullTextTopN, sources.length);
+		for (let i = 0; i < topN; i++) {
+			try {
+				const text = await this.mcpClient.callTool(
+					"zotero_get_item_fulltext",
+					{ item_key: sources[i].key }
+				);
+				if (text && text.trim()) {
+					const truncated = text.slice(0, this.settings.fullTextMaxChars);
+					fullTexts.set(sources[i].key, truncated);
+				}
+			} catch (err) {
+				console.warn(
+					`Failed to fetch full text for ${sources[i].key}:`,
+					err
+				);
+			}
+		}
 
-		// 5) Build messages for LLM
+		// 5) Build context string
+		const context = this.buildContext(sources, searchResult, fullTexts);
+
+		// 6) Build messages for LLM
 		const messages = this.buildMessages(
 			question,
 			context,
 			conversationHistory
 		);
 
-		// 6) Send to LLM
+		// 7) Send to LLM
 		const response = await this.llmProvider.chat(messages);
 
 		return {
@@ -147,7 +168,8 @@ export class Orchestrator {
 
 	private buildContext(
 		sources: ZoteroSource[],
-		rawSearchResult: string
+		rawSearchResult: string,
+		fullTexts: Map<string, string>
 	): string {
 		if (sources.length === 0) {
 			return `Search results (no structured metadata available):\n${rawSearchResult}`;
@@ -157,6 +179,11 @@ export class Orchestrator {
 			let entry = `[${i + 1}] ${s.title}\n   Authors: ${s.authors || "Unknown"}\n   Year: ${s.year}\n   Type: ${s.itemType}`;
 			if (s.abstract) {
 				entry += `\n   Abstract: ${s.abstract}`;
+			}
+			const fullText = fullTexts.get(s.key);
+			if (fullText) {
+				const wasTruncated = fullText.length >= this.settings.fullTextMaxChars;
+				entry += `\n   --- Full text${wasTruncated ? " (truncated)" : ""} ---\n${fullText}`;
 			}
 			return entry;
 		});

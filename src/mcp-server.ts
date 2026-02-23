@@ -1,11 +1,40 @@
-import { ChildProcess, spawn } from "child_process";
+import { ChildProcess, spawn, execSync } from "child_process";
 import { requestUrl } from "obsidian";
+
+function getShellPATH(): string {
+	// Obsidian (as a macOS GUI app) doesn't inherit the user's full shell PATH.
+	// Attempt to read it from the user's default shell so we can find tools
+	// like zotero-mcp that are installed via pip, Homebrew, etc.
+	try {
+		const shellPath = execSync(
+			'zsh -ilc "echo $PATH" 2>/dev/null || bash -ilc "echo $PATH" 2>/dev/null',
+			{ encoding: "utf-8", timeout: 5000 }
+		).trim();
+		if (shellPath) return shellPath;
+	} catch {
+		// Fall through to manual fallback
+	}
+
+	// Manual fallback: common install locations on macOS
+	const fallbackDirs = [
+		"/usr/local/bin",
+		"/opt/homebrew/bin",
+		"/Library/Frameworks/Python.framework/Versions/Current/bin",
+		"/Library/Frameworks/Python.framework/Versions/3.12/bin",
+		"/Library/Frameworks/Python.framework/Versions/3.11/bin",
+		`${process.env.HOME}/.local/bin`,
+		`${process.env.HOME}/.pyenv/shims`,
+	];
+	const existing = process.env.PATH || "/usr/bin:/bin";
+	return [...fallbackDirs, ...existing.split(":")].join(":");
+}
 
 export class MCPServerManager {
 	private process: ChildProcess | null = null;
 	private executablePath: string;
 	private port: number;
 	private stderrLog: string[] = [];
+	private lastError: string | null = null;
 
 	constructor(executablePath: string, port: number) {
 		this.executablePath = executablePath;
@@ -18,6 +47,9 @@ export class MCPServerManager {
 		}
 
 		this.stderrLog = [];
+		this.lastError = null;
+
+		const env = { ...process.env, PATH: getShellPATH() };
 
 		this.process = spawn(
 			this.executablePath,
@@ -25,6 +57,7 @@ export class MCPServerManager {
 			{
 				stdio: ["ignore", "pipe", "pipe"],
 				detached: false,
+				env,
 			}
 		);
 
@@ -40,11 +73,18 @@ export class MCPServerManager {
 		});
 
 		this.process.on("error", (err) => {
-			console.error("zotero-mcp process error:", err);
+			const msg = (err as NodeJS.ErrnoException).code === "ENOENT"
+				? `Could not find "${this.executablePath}". Make sure zotero-mcp is installed.`
+				: `Failed to start zotero-mcp: ${err.message}`;
+			console.error(msg);
+			this.lastError = msg;
 			this.process = null;
 		});
 
 		this.process.on("exit", (code) => {
+			if (code !== 0 && code !== null) {
+				this.lastError = `zotero-mcp exited with code ${code}. Check the dev console (Cmd+Option+I) for details.`;
+			}
 			console.log(`zotero-mcp exited with code ${code}`);
 			this.process = null;
 		});
@@ -68,43 +108,40 @@ export class MCPServerManager {
 		return `http://127.0.0.1:${this.port}`;
 	}
 
+	getLastError(): string | null {
+		return this.lastError;
+	}
+
 	getStderrLog(): string[] {
 		return [...this.stderrLog];
 	}
 
-	private async waitForReady(timeoutMs = 15000): Promise<void> {
+	private async waitForReady(timeoutMs = 30000): Promise<void> {
 		const start = Date.now();
 		const pollInterval = 500;
 
 		while (Date.now() - start < timeoutMs) {
 			if (!this.isRunning()) {
-				const lastErr = this.stderrLog.slice(-5).join("\n");
+				const detail = this.lastError || this.stderrLog.slice(-5).join("\n");
 				throw new Error(
-					`zotero-mcp process exited unexpectedly.\n${lastErr}`
+					`zotero-mcp failed to start. ${detail}`
 				);
 			}
 
 			try {
-				await requestUrl({
+				// Send a GET with the required Accept header but no session ID.
+				// The server returns a 400 "Missing session ID" immediately
+				// (no hanging SSE stream), which proves it's alive and ready.
+				// Using requestUrl here because the GET returns a finite JSON
+				// response (not SSE), so it won't hang.
+				const resp = await requestUrl({
 					url: `${this.getBaseUrl()}/mcp`,
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						jsonrpc: "2.0",
-						id: 0,
-						method: "initialize",
-						params: {
-							protocolVersion: "2025-03-26",
-							capabilities: {},
-							clientInfo: {
-								name: "zotero-mcp-chat-probe",
-								version: "0.1.0",
-							},
-						},
-					}),
+					method: "GET",
+					headers: { "Accept": "application/json, text/event-stream" },
+					throw: false,
 				});
-				// Server responded — it's ready
-				return;
+				// Any response (even 400) means the server is up
+				if (resp.status > 0) return;
 			} catch {
 				// Not ready yet, wait and retry
 				await new Promise((resolve) => setTimeout(resolve, pollInterval));

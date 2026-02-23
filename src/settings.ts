@@ -14,13 +14,13 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		// --- MCP Server Section ---
-		containerEl.createEl("h2", { text: "MCP Server" });
+		// --- Zotero MCP Section ---
+		containerEl.createEl("h2", { text: "Zotero MCP Server" });
 
 		new Setting(containerEl)
-			.setName("zotero-mcp executable path")
+			.setName("Zotero MCP command")
 			.setDesc(
-				'Path to the zotero-mcp binary. Use "zotero-mcp" if it\'s in your PATH.'
+				"The command used to start the Zotero MCP server. The default should work if you installed zotero-mcp normally."
 			)
 			.addText((text) =>
 				text
@@ -32,39 +32,25 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 					})
 			);
 
-		new Setting(containerEl)
-			.setName("Server port")
-			.setDesc("Port for the MCP HTTP server.")
-			.addText((text) =>
-				text
-					.setPlaceholder("8000")
-					.setValue(String(this.plugin.settings.mcpServerPort))
-					.onChange(async (value) => {
-						const port = parseInt(value, 10);
-						if (!isNaN(port) && port > 0 && port < 65536) {
-							this.plugin.settings.mcpServerPort = port;
-							await this.plugin.saveSettings();
-						}
-					})
-			);
-
-		// --- LLM Provider Section ---
-		containerEl.createEl("h2", { text: "LLM Provider" });
+		// --- LLM Section ---
+		containerEl.createEl("h2", { text: "AI Model" });
 
 		new Setting(containerEl)
 			.setName("Provider")
-			.setDesc("Choose your LLM provider.")
+			.setDesc(
+				"Which AI service to use. Ollama runs on your computer for free. OpenRouter and Anthropic require an API key."
+			)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOption("ollama", "Ollama (Local)")
-					.addOption("openrouter", "OpenRouter")
-					.addOption("anthropic", "Anthropic (Claude API)")
+					.addOption("ollama", "Ollama (Local, free)")
+					.addOption("openrouter", "OpenRouter (cloud, many models)")
+					.addOption("anthropic", "Anthropic (Claude)")
 					.setValue(this.plugin.settings.llmProvider)
 					.onChange(async (value) => {
 						this.plugin.settings.llmProvider =
 							value as LLMProviderType;
 						await this.plugin.saveSettings();
-						this.display(); // Re-render to show/hide provider fields
+						this.display();
 					})
 			);
 
@@ -72,21 +58,10 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 
 		if (provider === "ollama") {
 			new Setting(containerEl)
-				.setName("Ollama base URL")
-				.setDesc("URL where Ollama is running.")
-				.addText((text) =>
-					text
-						.setPlaceholder("http://localhost:11434")
-						.setValue(this.plugin.settings.ollamaBaseUrl)
-						.onChange(async (value) => {
-							this.plugin.settings.ollamaBaseUrl = value;
-							await this.plugin.saveSettings();
-						})
-				);
-
-			new Setting(containerEl)
 				.setName("Model")
-				.setDesc("Ollama model name (e.g., deepseek-r1:8b).")
+				.setDesc(
+					"Which Ollama model to use. Must already be downloaded in Ollama."
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder("deepseek-r1:8b")
@@ -101,7 +76,9 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 		if (provider === "openrouter") {
 			new Setting(containerEl)
 				.setName("API key")
-				.setDesc("Your OpenRouter API key.")
+				.setDesc(
+					"Your OpenRouter API key. Get one at openrouter.ai."
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder("sk-or-...")
@@ -114,7 +91,7 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName("Model")
-				.setDesc("OpenRouter model ID.")
+				.setDesc("Which model to use on OpenRouter.")
 				.addText((text) =>
 					text
 						.setPlaceholder("deepseek/deepseek-r1")
@@ -129,7 +106,9 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 		if (provider === "anthropic") {
 			new Setting(containerEl)
 				.setName("API key")
-				.setDesc("Your Anthropic API key.")
+				.setDesc(
+					"Your Anthropic API key. Get one at console.anthropic.com."
+				)
 				.addText((text) =>
 					text
 						.setPlaceholder("sk-ant-...")
@@ -142,7 +121,7 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setName("Model")
-				.setDesc("Anthropic model ID.")
+				.setDesc("Which Claude model to use.")
 				.addText((text) =>
 					text
 						.setPlaceholder("claude-sonnet-4-5-20250929")
@@ -158,9 +137,41 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 		containerEl.createEl("h2", { text: "Behavior" });
 
 		new Setting(containerEl)
-			.setName("Conversation history length")
+			.setName("Papers with full text")
 			.setDesc(
-				"Number of past messages to include as context (higher = more token usage)."
+				"How many of the top search results to include full paper text for. The rest get metadata only. Higher gives deeper answers but uses more resources."
+			)
+			.addSlider((slider) =>
+				slider
+					.setLimits(0, 5, 1)
+					.setValue(this.plugin.settings.fullTextTopN)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.fullTextTopN = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Max text per paper")
+			.setDesc(
+				"Maximum characters of full text to include per paper. Longer gives more detail but uses more resources."
+			)
+			.addSlider((slider) =>
+				slider
+					.setLimits(1000, 16000, 1000)
+					.setValue(this.plugin.settings.fullTextMaxChars)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						this.plugin.settings.fullTextMaxChars = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Conversation memory")
+			.setDesc(
+				"How many previous messages the AI remembers during a conversation. Higher uses more resources."
 			)
 			.addSlider((slider) =>
 				slider
@@ -175,7 +186,9 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("System prompt")
-			.setDesc("Instructions given to the LLM for every conversation.")
+			.setDesc(
+				"Background instructions given to the AI. Controls how it responds to your questions."
+			)
 			.addTextArea((text) =>
 				text
 					.setPlaceholder("You are a research assistant...")
@@ -185,5 +198,47 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		// --- Advanced Section (collapsed) ---
+		const advancedDetails = containerEl.createEl("details");
+		advancedDetails.createEl("summary", {
+			text: "Advanced",
+			cls: "zotero-chat-advanced-toggle",
+		});
+
+		new Setting(advancedDetails)
+			.setName("Server port")
+			.setDesc(
+				"Only change this if port 8000 is already in use by another app."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("8000")
+					.setValue(String(this.plugin.settings.mcpServerPort))
+					.onChange(async (value) => {
+						const port = parseInt(value, 10);
+						if (!isNaN(port) && port > 0 && port < 65536) {
+							this.plugin.settings.mcpServerPort = port;
+							await this.plugin.saveSettings();
+						}
+					})
+			);
+
+		if (provider === "ollama") {
+			new Setting(advancedDetails)
+				.setName("Ollama address")
+				.setDesc(
+					"Only change this if Ollama is running on a different computer or non-standard port."
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder("http://localhost:11434")
+						.setValue(this.plugin.settings.ollamaBaseUrl)
+						.onChange(async (value) => {
+							this.plugin.settings.ollamaBaseUrl = value;
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 	}
 }

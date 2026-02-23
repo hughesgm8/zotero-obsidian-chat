@@ -1,11 +1,4 @@
-import { requestUrl } from "obsidian";
-
-interface JsonRpcRequest {
-	jsonrpc: "2.0";
-	id: number;
-	method: string;
-	params?: Record<string, unknown>;
-}
+import * as http from "http";
 
 interface JsonRpcResponse {
 	jsonrpc: "2.0";
@@ -16,12 +9,17 @@ interface JsonRpcResponse {
 
 export class MCPClient {
 	private baseUrl: string;
+	private host: string;
+	private port: number;
 	private sessionId: string | null = null;
 	private nextId = 1;
 	private initialized = false;
 
 	constructor(baseUrl: string) {
 		this.baseUrl = baseUrl;
+		const url = new URL(baseUrl);
+		this.host = url.hostname;
+		this.port = parseInt(url.port, 10) || 80;
 	}
 
 	async initialize(): Promise<void> {
@@ -40,7 +38,6 @@ export class MCPClient {
 			throw new Error("MCP initialize returned no result");
 		}
 
-		// Send initialized notification
 		await this.sendNotification("notifications/initialized", {});
 		this.initialized = true;
 	}
@@ -76,112 +73,205 @@ export class MCPClient {
 		this.sessionId = null;
 	}
 
-	private async send(
+	private send(
 		method: string,
 		params: Record<string, unknown>
 	): Promise<unknown> {
-		const request: JsonRpcRequest = {
-			jsonrpc: "2.0",
-			id: this.nextId++,
-			method,
-			params,
-		};
+		return new Promise((resolve, reject) => {
+			const body = JSON.stringify({
+				jsonrpc: "2.0",
+				id: this.nextId++,
+				method,
+				params,
+			});
 
-		const headers: Record<string, string> = {
-			"Content-Type": "application/json",
-			Accept: "application/json, text/event-stream",
-		};
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				"Accept": "application/json, text/event-stream",
+				"Content-Length": String(Buffer.byteLength(body)),
+			};
 
-		if (this.sessionId) {
-			headers["Mcp-Session-Id"] = this.sessionId;
-		}
+			if (this.sessionId) {
+				headers["Mcp-Session-Id"] = this.sessionId;
+			}
 
-		const response = await requestUrl({
-			url: `${this.baseUrl}/mcp`,
-			method: "POST",
-			headers,
-			body: JSON.stringify(request),
-			throw: false,
+			const req = http.request(
+				{
+					hostname: this.host,
+					port: this.port,
+					path: "/mcp",
+					method: "POST",
+					headers,
+				},
+				(res) => {
+					// Capture session ID
+					const sid = res.headers["mcp-session-id"];
+					if (sid && typeof sid === "string") {
+						this.sessionId = sid;
+					}
+
+					if (res.statusCode && res.statusCode >= 400) {
+						let errBody = "";
+						res.on("data", (chunk) => {
+							errBody += chunk.toString();
+						});
+						res.on("end", () => {
+							reject(
+								new Error(
+									`MCP request failed (${res.statusCode}): ${errBody}`
+								)
+							);
+						});
+						return;
+					}
+
+					const contentType = res.headers["content-type"] || "";
+					if (contentType.includes("text/event-stream")) {
+						// Read SSE stream — get first JSON-RPC data event, then close
+						this.readSSEFromStream(res, req, resolve, reject);
+					} else {
+						// Plain JSON response
+						let data = "";
+						res.on("data", (chunk) => {
+							data += chunk.toString();
+						});
+						res.on("end", () => {
+							try {
+								const parsed = JSON.parse(
+									data
+								) as JsonRpcResponse;
+								if (parsed.error) {
+									reject(
+										new Error(
+											`MCP error ${parsed.error.code}: ${parsed.error.message}`
+										)
+									);
+								} else {
+									resolve(parsed.result);
+								}
+							} catch (e) {
+								reject(
+									new Error(
+										`Failed to parse MCP response: ${data.slice(0, 200)}`
+									)
+								);
+							}
+						});
+					}
+				}
+			);
+
+			req.on("error", (err) => {
+				reject(new Error(`MCP connection error: ${err.message}`));
+			});
+
+			req.write(body);
+			req.end();
 		});
-
-		if (response.status >= 400) {
-			throw new Error(
-				`MCP request failed (${response.status}): ${response.text}`
-			);
-		}
-
-		// Capture session ID from response headers
-		const newSessionId = response.headers["mcp-session-id"];
-		if (newSessionId) {
-			this.sessionId = newSessionId;
-		}
-
-		// Handle SSE response (text/event-stream)
-		const contentType = response.headers["content-type"] || "";
-		if (contentType.includes("text/event-stream")) {
-			return this.parseSSE(response.text);
-		}
-
-		// Handle JSON response
-		const jsonResp = response.json as JsonRpcResponse;
-		if (jsonResp.error) {
-			throw new Error(
-				`MCP error ${jsonResp.error.code}: ${jsonResp.error.message}`
-			);
-		}
-
-		return jsonResp.result;
 	}
 
-	private parseSSE(text: string): unknown {
-		// Parse Server-Sent Events to extract JSON-RPC response
-		const lines = text.split("\n");
-		for (const line of lines) {
-			if (line.startsWith("data: ")) {
-				const data = line.slice(6).trim();
-				if (!data) continue;
-				try {
-					const parsed = JSON.parse(data) as JsonRpcResponse;
-					if (parsed.error) {
-						throw new Error(
-							`MCP error ${parsed.error.code}: ${parsed.error.message}`
-						);
+	private readSSEFromStream(
+		res: http.IncomingMessage,
+		req: http.ClientRequest,
+		resolve: (value: unknown) => void,
+		reject: (reason: Error) => void
+	): void {
+		let buffer = "";
+
+		res.on("data", (chunk: Buffer) => {
+			buffer += chunk.toString();
+
+			const lines = buffer.split("\n");
+			// Keep last potentially incomplete line
+			buffer = lines.pop() || "";
+
+			for (const line of lines) {
+				if (line.startsWith("data: ")) {
+					const data = line.slice(6).trim();
+					if (!data) continue;
+
+					try {
+						const parsed = JSON.parse(data) as JsonRpcResponse;
+						// Got our response — clean up the connection
+						res.destroy();
+						req.destroy();
+
+						if (parsed.error) {
+							reject(
+								new Error(
+									`MCP error ${parsed.error.code}: ${parsed.error.message}`
+								)
+							);
+						} else {
+							resolve(parsed.result);
+						}
+						return;
+					} catch {
+						// Not valid JSON, skip
 					}
-					return parsed.result;
-				} catch (e) {
-					if (e instanceof Error && e.message.startsWith("MCP error")) {
-						throw e;
-					}
-					// Not valid JSON, skip
 				}
 			}
-		}
-		return null;
+		});
+
+		res.on("error", (err) => {
+			// ECONNRESET is expected after we destroy the connection
+			if ((err as NodeJS.ErrnoException).code !== "ECONNRESET") {
+				reject(new Error(`SSE stream error: ${err.message}`));
+			}
+		});
+
+		res.on("end", () => {
+			// Stream ended without a response
+			resolve(null);
+		});
 	}
 
-	private async sendNotification(
+	private sendNotification(
 		method: string,
 		params: Record<string, unknown>
 	): Promise<void> {
-		const headers: Record<string, string> = {
-			"Content-Type": "application/json",
-		};
-
-		if (this.sessionId) {
-			headers["Mcp-Session-Id"] = this.sessionId;
-		}
-
-		// Notifications have no id
-		await requestUrl({
-			url: `${this.baseUrl}/mcp`,
-			method: "POST",
-			headers,
-			body: JSON.stringify({
+		return new Promise((resolve) => {
+			const body = JSON.stringify({
 				jsonrpc: "2.0",
 				method,
 				params,
-			}),
-			throw: false,
+			});
+
+			const headers: Record<string, string> = {
+				"Content-Type": "application/json",
+				"Content-Length": String(Buffer.byteLength(body)),
+			};
+
+			if (this.sessionId) {
+				headers["Mcp-Session-Id"] = this.sessionId;
+			}
+
+			const req = http.request(
+				{
+					hostname: this.host,
+					port: this.port,
+					path: "/mcp",
+					method: "POST",
+					headers,
+				},
+				(res) => {
+					const sid = res.headers["mcp-session-id"];
+					if (sid && typeof sid === "string") {
+						this.sessionId = sid;
+					}
+					// Consume and discard the response body
+					res.resume();
+					res.on("end", () => resolve());
+				}
+			);
+
+			req.on("error", () => {
+				// Notifications are fire-and-forget
+				resolve();
+			});
+
+			req.write(body);
+			req.end();
 		});
 	}
 }
