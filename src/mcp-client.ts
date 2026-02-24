@@ -58,14 +58,21 @@ export class MCPClient {
 			arguments: args,
 		})) as {
 			content?: Array<{ type: string; text?: string }>;
+			isError?: boolean;
 		};
 
 		if (!result?.content) return "";
 
-		return result.content
+		const text = result.content
 			.filter((c) => c.type === "text" && c.text)
 			.map((c) => c.text)
 			.join("\n");
+
+		if (result.isError) {
+			throw new Error(`Zotero search failed: ${text}`);
+		}
+
+		return text;
 	}
 
 	async close(): Promise<void> {
