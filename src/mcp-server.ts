@@ -35,6 +35,7 @@ export class MCPServerManager {
 	private port: number;
 	private stderrLog: string[] = [];
 	private lastError: string | null = null;
+	onUnexpectedExit: (() => void) | null = null;
 
 	constructor(executablePath: string, port: number) {
 		this.executablePath = executablePath;
@@ -82,11 +83,12 @@ export class MCPServerManager {
 		});
 
 		this.process.on("exit", (code) => {
-			if (code !== 0 && code !== null) {
-				this.lastError = `zotero-mcp exited with code ${code}. Check the dev console (Cmd+Option+I) for details.`;
-			}
 			console.log(`zotero-mcp exited with code ${code}`);
 			this.process = null;
+			if (code !== 0 && code !== null) {
+				this.lastError = `zotero-mcp exited with code ${code}.`;
+				this.onUnexpectedExit?.();
+			}
 		});
 
 		// Wait for the server to be ready

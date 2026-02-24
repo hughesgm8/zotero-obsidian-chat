@@ -32,6 +32,14 @@ export class Orchestrator {
 			{ query: question }
 		);
 
+		// Detect error text returned as plain content (zotero-mcp does not always
+		// set isError:true — it sometimes returns errors as regular text).
+		if (searchResult && this.looksLikeError(searchResult)) {
+			throw new Error(
+				`The Zotero server returned an error: ${searchResult.slice(0, 300)}`
+			);
+		}
+
 		// 2) Parse item keys from search results
 		const itemKeys = this.extractItemKeys(searchResult);
 
@@ -90,6 +98,15 @@ export class Orchestrator {
 			content: response.content,
 			sources,
 		};
+	}
+
+	private looksLikeError(text: string): boolean {
+		const lower = text.toLowerCase();
+		return (
+			lower.includes("already exists") ||
+			lower.includes("collection [") ||
+			(lower.startsWith("error") && !text.trimStart().startsWith("{"))
+		);
 	}
 
 	private extractItemKeys(searchResult: string): string[] {

@@ -286,7 +286,7 @@ export class ZoteroChatView extends ItemView {
 		this.updateStatus();
 	}
 
-	private updateStatus(): void {
+	updateStatus(): void {
 		if (!this.statusEl) return;
 
 		const mcpRunning = this.plugin.isMCPRunning();

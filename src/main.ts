@@ -42,7 +42,7 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 		this.addSettingTab(new ZoteroMCPSettingTab(this.app, this));
 
 		// Start MCP server in background
-		this.startMCPServer();
+		await this.startMCPServer();
 	}
 
 	async onunload(): Promise<void> {
@@ -89,6 +89,18 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 				this.settings.mcpExecutablePath,
 				this.settings.mcpServerPort
 			);
+
+			this.mcpServer.onUnexpectedExit = () => {
+				new Notice(
+					"Zotero Chat: The Zotero server stopped unexpectedly. Disable and re-enable the plugin to restart it.",
+					10000
+				);
+				// Turn the status dot red in any open chat views
+				for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZOTERO_CHAT)) {
+					(leaf.view as ZoteroChatView).updateStatus();
+				}
+			};
+
 			await this.mcpServer.start();
 
 			// Initialize MCP client
