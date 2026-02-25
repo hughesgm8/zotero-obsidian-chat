@@ -50,16 +50,65 @@ You can now close Terminal. Ollama runs quietly in the background whenever you n
 
 ## Step 2 — Set up zotero-mcp
 
-zotero-mcp is the bridge between your Zotero library and the plugin. It indexes your papers so they can be searched.
+zotero-mcp is the bridge between your Zotero library and the plugin. It reads your papers and builds a searchable index so the AI can find relevant ones.
 
-Follow the official setup guide here: **[zotero-mcp Setup Instructions](https://github.com/54yyyu/zotero-mcp)**
+### 2a. Allow Zotero to talk to other apps
 
-You'll need to:
-- Get a free Zotero API key from [zotero.org/settings/keys](https://www.zotero.org/settings/keys)
-- Install Python (the zotero-mcp guide walks you through this)
-- Run the indexing step — this reads your Zotero library and can take a few minutes depending on how many papers you have
+1. Open **Zotero**
+2. Go to **Zotero → Settings → Advanced**
+3. Tick **"Allow other applications on this computer to communicate with Zotero"**
+4. Leave Zotero open — it needs to be running whenever you use the plugin
 
-> **Tip:** Keep Zotero open while using the plugin. It helps keep your library index up to date.
+### 2b. Check that Python is installed
+
+1. Open **Terminal** (press `⌘ Space`, type "Terminal", press Enter)
+2. Type this and press Enter:
+   ```
+   python3 --version
+   ```
+3. You should see something like `Python 3.11.4`. The number needs to be **3.10 or higher**.
+
+   If you see an error or a version below 3.10, download the latest Python from [python.org/downloads](https://www.python.org/downloads/) and install it like any Mac app, then repeat this step.
+
+### 2c. Install zotero-mcp
+
+In Terminal, paste this and press Enter:
+
+```
+pip3 install zotero-mcp-server
+```
+
+Wait for it to finish. You'll see a lot of text scroll by — that's normal.
+
+### 2d. Run the setup
+
+```
+zotero-mcp setup
+```
+
+This will ask you a few questions. Here's exactly what to choose:
+
+| Question | What to pick | Why |
+|---|---|---|
+| How to connect to Zotero? | **Local API** | No account needed — uses Zotero running on your computer |
+| Embedding model? | **Default** | Free, runs locally, no API key required |
+| How often to update the index? | **Daily** | Automatically stays up to date without slowing down every launch |
+
+If it asks for anything else, the default option is usually fine.
+
+### 2e. Build your paper index
+
+This step reads your Zotero library and creates the searchable database. It can take a while if you have a large library — run it and then go make a coffee.
+
+```
+zotero-mcp update-db --fulltext
+```
+
+> **Why `--fulltext`?** Without this flag, the plugin can only search paper titles and abstracts. With it, it also searches the full text of your PDFs, which gives much better results for detailed academic questions. It takes longer to build but is worth it.
+
+When it finishes, you're ready to install the plugin.
+
+> **Adding papers to Zotero later?** Re-run `zotero-mcp update-db --fulltext` in Terminal whenever you want to include newly added papers in searches.
 
 ---
 
@@ -133,7 +182,7 @@ This is normal with local models. Larger models are slower. Try `llama3.2:3b` fo
 This can happen if you also use zotero-mcp with Claude Desktop at the same time. See the [zotero-mcp issue tracker](https://github.com/54yyyu/zotero-mcp/issues) for the latest fix.
 
 **The model doesn't seem to know about my papers**
-Make sure you completed the indexing step in zotero-mcp setup. If you've added papers to Zotero recently, you may need to re-index.
+Make sure you completed Step 2e. If you've added papers to Zotero recently, open Terminal and run `zotero-mcp update-db --fulltext` to re-index.
 
 ---
 
