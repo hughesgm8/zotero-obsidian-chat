@@ -129,7 +129,7 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
 2. Click **Add Beta Plugin**
 3. Paste this URL and click **Add Plugin**:
    ```
-   https://github.com/hughesgm8/zotero-obsidian-plugin
+   https://github.com/hughesgm8/zotero-obsidian-chat
    ```
 4. BRAT will download and install it automatically
 
@@ -196,4 +196,4 @@ When using OpenRouter or Claude, your questions and relevant paper excerpts are 
 
 ## Feedback
 
-Found a bug or have a suggestion? Open an issue at [github.com/hughesgm8/zotero-obsidian-plugin/issues](https://github.com/hughesgm8/zotero-obsidian-plugin/issues).
+Found a bug or have a suggestion? Open an issue at [github.com/hughesgm8/zotero-obsidian-chat/issues](https://github.com/hughesgm8/zotero-obsidian-chat/issues).

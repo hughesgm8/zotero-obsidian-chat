@@ -13,7 +13,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - Deterministic query orchestrator (search → metadata → full text → LLM)
 - Sidebar chat view with markdown rendering, citations, copy button
 - Save conversation to vault (floppy disk button → `Zotero Chats/YYYY-MM-DD/` folder)
-- Attach active note as context (paperclip button → chip UI, prepends note content to query)
+- Attach active note as context (@ button → fuzzy note picker modal → chip UI; note passed separately to LLM, not to semantic search; full note content sent, no truncation; multi-note support)
 - Sources citations: correctly parses markdown format returned by `zotero_get_item_metadata`
 - UI layout: `ResizeObserver` in `onOpen()` fires `workspace.trigger("resize")` as soon as panel gets real dimensions (no more squash on cold open)
 - Tested end-to-end in a real Obsidian vault (confirmed working)
@@ -22,6 +22,9 @@ Maintain a system map the user can understand. The project's status is updated r
 - "Test Connection" buttons in settings for MCP and LLM
 - "Smart mode" for capable models that can call MCP tools themselves
 - Model switching directly in the sidebar UI (currently settings-only)
+- **Move new chat + save buttons** from top-right header to just above the input area (Gabriel's preference)
+- Chat history: browse and reload saved conversations (design TBD)
+- Chat settings panel in sidebar (future, low priority)
 
 ## ⚠️ Known Issues
 - **zotero-mcp ChromaDB bug**: `chroma_client.py` line 194 uses `create_collection()` instead of `get_or_create_collection()`. When Claude Desktop's zotero-mcp processes are running simultaneously, they share `~/.config/zotero-mcp/chroma_db` and the plugin's instance fails with "Collection [zotero_library] already exists". **Workaround applied**: edited installed package at `/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/zotero_mcp/chroma_client.py` line 194. This will be overwritten by `pip upgrade`. Gabriel is considering forking zotero-mcp long-term.
@@ -75,8 +78,12 @@ The plugin handles MCP calls directly rather than delegating tool selection to t
 - Obsidian Plugin API (TypeScript)
 
 ## UI Reference
-Modeled after the Obsidian Copilot plugin: sidebar panel, markdown-formatted responses, copy functionality, model switching in UI.
+Modeled after the Obsidian Copilot plugin. Target layout:
+- **Header**: status dot + title (left), action buttons right-aligned (new chat `square-pen`, save `file-output`)
+- **Chat area**: messages with markdown rendering and copy buttons
+- **Input area**: `@` button (opens fuzzy note picker), textarea, send button; attached note pills render above input row
 
 ## Reference Documents
+- GitHub repo: https://github.com/hughesgm8/zotero-obsidian-chat (public)
 - Implementation plan: `Agent Configuration/changelogs/IMPLEMENTATION_PLAN_v0.1.0.md`
 - Changelogs: `Agent Configuration/changelogs/2026-02-23.md`, `2026-02-24.md`, `2026-02-25.md`
