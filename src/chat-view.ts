@@ -21,6 +21,7 @@ export class ZoteroChatView extends ItemView {
 	private isLoading = false;
 	private attachedNote: { name: string; path: string; content: string } | null = null;
 	private attachmentChipEl!: HTMLElement;
+	private sizeObserver: ResizeObserver | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ZoteroMCPChatPlugin) {
 		super(leaf);
@@ -127,10 +128,29 @@ export class ZoteroChatView extends ItemView {
 		this.sendBtnEl.addEventListener("click", () => this.handleSend());
 
 		this.updateStatus();
+
+		// Obsidian may not have finalised sidebar dimensions when onOpen() runs,
+		// so height:100% on the container resolves to 0 until a layout pass
+		// completes. Watch for the panel getting its real size, then trigger a
+		// workspace resize once — this is the same event that fixes it when the
+		// server connects, just fired at the right moment instead of 30s later.
+		const panelEl = this.containerEl.children[1] as HTMLElement;
+		this.sizeObserver = new ResizeObserver((entries) => {
+			for (const entry of entries) {
+				if (entry.contentRect.height > 0) {
+					this.sizeObserver?.disconnect();
+					this.sizeObserver = null;
+					this.app.workspace.trigger("resize");
+					break;
+				}
+			}
+		});
+		this.sizeObserver.observe(panelEl);
 	}
 
 	async onClose(): Promise<void> {
-		// Nothing to clean up
+		this.sizeObserver?.disconnect();
+		this.sizeObserver = null;
 	}
 
 	private renderWelcome(): void {

@@ -31,6 +31,7 @@ function getShellPATH(): string {
 
 export class MCPServerManager {
 	private process: ChildProcess | null = null;
+	private usingExternalProcess = false;
 	private executablePath: string;
 	private port: number;
 	private stderrLog: string[] = [];
@@ -43,15 +44,22 @@ export class MCPServerManager {
 	}
 
 	async start(): Promise<void> {
-		if (this.process) {
+		if (this.process || this.usingExternalProcess) {
 			return;
 		}
 
 		this.stderrLog = [];
 		this.lastError = null;
 
-		// Kill any lingering zotero-mcp process from a previous plugin run.
-		// Without this, the old process may still hold our port when we try to bind.
+		// Fast path: if a server is already answering on our port (e.g. from a
+		// previous plugin load that wasn't fully torn down), reuse it.
+		// This avoids the ~30-60s ChromaDB reinit on every plugin reload.
+		if (await this.tryReuseExistingServer()) {
+			return;
+		}
+
+		// Nothing usable on the port — kill any stale process holding it and
+		// spawn a fresh server.
 		await this.killStaleMCPProcess();
 
 		const env = { ...process.env, PATH: getShellPATH() };
@@ -100,14 +108,19 @@ export class MCPServerManager {
 	}
 
 	stop(): void {
-		if (this.process) {
-			this.process.kill("SIGTERM");
-			this.process = null;
-		}
+		// Drop the reference but do NOT kill the process. Keeping the server
+		// alive across plugin reloads means the next start() can reuse the
+		// already-warm process via tryReuseExistingServer() instead of paying
+		// the full ~30-60s ChromaDB cold-start cost every time.
+		// The process will be terminated naturally when Obsidian quits
+		// (detached:false means it belongs to Obsidian's process group).
+		this.process = null;
+		this.usingExternalProcess = false;
 	}
 
 	isRunning(): boolean {
-		return this.process !== null && this.process.exitCode === null;
+		return this.usingExternalProcess ||
+			(this.process !== null && this.process.exitCode === null);
 	}
 
 	getBaseUrl(): string {
@@ -120,6 +133,38 @@ export class MCPServerManager {
 
 	getStderrLog(): string[] {
 		return [...this.stderrLog];
+	}
+
+	private async tryReuseExistingServer(): Promise<boolean> {
+		// Step 1: quick sync check — is anything listening on our port?
+		try {
+			const result = execSync(
+				`lsof -nti :${this.port} -sTCP:LISTEN`,
+				{ encoding: "utf-8", timeout: 2000 }
+			).trim();
+			if (!result) return false;
+		} catch {
+			return false; // lsof exits 1 when no matches
+		}
+
+		// Step 2: something is listening — probe it as an MCP server
+		try {
+			const resp = await requestUrl({
+				url: `${this.getBaseUrl()}/mcp`,
+				method: "GET",
+				headers: { "Accept": "application/json, text/event-stream" },
+				throw: false,
+			});
+			if (resp.status > 0) {
+				console.log(`zotero-mcp: reusing server already running on port ${this.port}`);
+				this.usingExternalProcess = true;
+				return true;
+			}
+		} catch {
+			// Port is occupied by something that isn't our MCP server — fall through
+		}
+
+		return false;
 	}
 
 	private async killStaleMCPProcess(): Promise<void> {

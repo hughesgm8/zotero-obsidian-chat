@@ -55,3 +55,31 @@ Users don't need to manually start a server in a terminal before using the plugi
 
 ### What Could Change
 If users want to share a single zotero-mcp instance across apps (e.g., Claude Desktop + Obsidian), we'd add a "connect to existing server" mode alongside the auto-spawn default.
+
+---
+
+## Decision: Edit installed zotero-mcp package directly (not fork — yet)
+
+### Why This Matters
+zotero-mcp has a bug in `chroma_client.py` where `create_collection()` is called in an `except` block instead of `get_or_create_collection()`. When Claude Desktop's zotero-mcp instances are running alongside the plugin's instance, they share the same `~/.config/zotero-mcp/chroma_db` directory. The second instance to call the tool always fails with "Collection [zotero_library] already exists".
+
+### Options We Considered
+1. **Edit installed package**: Quick fix, works immediately, but silently overwritten on `pip upgrade`
+2. **Fork and maintain zotero-mcp**: Full control, permanent fix, slightly more setup. Updates from upstream are optional and cherry-picked. Only real reason to pull upstream is if Zotero's API changes.
+3. **Contribute fix upstream**: Correct long-term move but not guaranteed to be merged quickly; upstream appears primarily maintained for Claude Desktop (stdio transport), not HTTP transport
+
+### Why We Chose This (for now)
+Edit the installed package to unblock immediately. Gabriel is considering forking zotero-mcp for longer-term maintenance — the project's priorities aren't fully aligned with our plugin's usage (HTTP transport, multi-instance scenarios).
+
+### What Could Change
+Gabriel forks zotero-mcp and installs it with `pip install -e /path/to/fork`. This makes the fix permanent and gives full control over future changes without depending on upstream.
+
+---
+
+## Decision: zotero-mcp HTTP transport is our primary concern; Claude Desktop uses stdio
+
+### Why This Matters
+The plugin spawns zotero-mcp with `--transport streamable-http`. Claude Desktop uses stdio. Both point at the same `~/.config/zotero-mcp/chroma_db`. When both apps run simultaneously, they race on ChromaDB collection creation — a bug masked in Claude Desktop's usage because stdio sessions are isolated.
+
+### Implication
+Bugs in zotero-mcp's HTTP transport path are unlikely to be caught or fixed by the upstream maintainer. We should treat zotero-mcp as a dependency we may need to patch or fork.

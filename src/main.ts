@@ -91,6 +91,12 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 			);
 
 			this.mcpServer.onUnexpectedExit = () => {
+				// Log last stderr lines so the Python traceback is visible in
+				// the Obsidian developer console (Cmd+Option+I → Console tab)
+				const stderrLines = this.mcpServer?.getStderrLog() ?? [];
+				if (stderrLines.length > 0) {
+					console.error("zotero-mcp stderr before crash:\n" + stderrLines.join("\n"));
+				}
 				new Notice(
 					"Zotero Chat: The Zotero server stopped unexpectedly. Disable and re-enable the plugin to restart it.",
 					10000
@@ -111,6 +117,13 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 			this.rebuildOrchestrator();
 
 			new Notice("Zotero MCP Chat: Server connected");
+
+			// Update the status dot in any already-open chat views and trigger
+			// a layout refresh so the panel renders at the correct size.
+			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZOTERO_CHAT)) {
+				(leaf.view as ZoteroChatView).updateStatus();
+			}
+			this.app.workspace.trigger("resize");
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.error("Failed to start MCP server:", msg);
