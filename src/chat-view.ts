@@ -1,4 +1,6 @@
 import {
+	App,
+	FuzzySuggestModal,
 	ItemView,
 	MarkdownRenderer,
 	Notice,
@@ -11,6 +13,29 @@ import type { ChatMessage } from "./types";
 
 export const VIEW_TYPE_ZOTERO_CHAT = "zotero-mcp-chat-view";
 
+// Fuzzy note picker — opens Obsidian's built-in search modal over vault files
+class NotePicker extends FuzzySuggestModal<TFile> {
+	private onSelect: (file: TFile) => void;
+
+	constructor(app: App, onSelect: (file: TFile) => void) {
+		super(app);
+		this.onSelect = onSelect;
+		this.setPlaceholder("Search for a note to attach...");
+	}
+
+	getItems(): TFile[] {
+		return this.app.vault.getMarkdownFiles();
+	}
+
+	getItemText(file: TFile): string {
+		return file.path;
+	}
+
+	onChooseItem(file: TFile): void {
+		this.onSelect(file);
+	}
+}
+
 export class ZoteroChatView extends ItemView {
 	plugin: ZoteroMCPChatPlugin;
 	private messages: ChatMessage[] = [];
@@ -19,7 +44,7 @@ export class ZoteroChatView extends ItemView {
 	private sendBtnEl!: HTMLButtonElement;
 	private statusEl!: HTMLElement;
 	private isLoading = false;
-	private attachedNote: { name: string; path: string; content: string } | null = null;
+	private attachedNotes: Array<{ name: string; path: string; content: string }> = [];
 	private attachmentChipEl!: HTMLElement;
 	private sizeObserver: ResizeObserver | null = null;
 
@@ -45,7 +70,7 @@ export class ZoteroChatView extends ItemView {
 		container.empty();
 		container.addClass("zotero-chat-container");
 
-		// Header with status and clear button
+		// Header with status and action buttons
 		const header = container.createDiv({ cls: "zotero-chat-header" });
 
 		const statusWrapper = header.createDiv({
@@ -63,19 +88,19 @@ export class ZoteroChatView extends ItemView {
 			cls: "zotero-chat-header-actions",
 		});
 
+		const newChatBtn = headerActions.createEl("button", {
+			cls: "zotero-chat-new-btn clickable-icon",
+			attr: { "aria-label": "New chat" },
+		});
+		setIcon(newChatBtn, "square-pen");
+		newChatBtn.addEventListener("click", () => this.clearChat());
+
 		const saveBtn = headerActions.createEl("button", {
 			cls: "zotero-chat-save-btn clickable-icon",
 			attr: { "aria-label": "Save conversation" },
 		});
-		setIcon(saveBtn, "save");
+		setIcon(saveBtn, "file-output");
 		saveBtn.addEventListener("click", () => this.saveConversation());
-
-		const clearBtn = headerActions.createEl("button", {
-			cls: "zotero-chat-clear-btn clickable-icon",
-			attr: { "aria-label": "Clear chat" },
-		});
-		setIcon(clearBtn, "trash-2");
-		clearBtn.addEventListener("click", () => this.clearChat());
 
 		// Message list
 		this.messageListEl = container.createDiv({
@@ -99,12 +124,14 @@ export class ZoteroChatView extends ItemView {
 			cls: "zotero-chat-input-row",
 		});
 
-		const paperclipBtn = inputRow.createEl("button", {
-			cls: "zotero-chat-paperclip-btn clickable-icon",
-			attr: { "aria-label": "Attach current note as context" },
+		const atBtn = inputRow.createEl("button", {
+			cls: "zotero-chat-at-btn clickable-icon",
+			attr: { "aria-label": "Attach a note" },
 		});
-		setIcon(paperclipBtn, "paperclip");
-		paperclipBtn.addEventListener("click", () => this.attachActiveNote());
+		setIcon(atBtn, "at-sign");
+		atBtn.addEventListener("click", () => {
+			new NotePicker(this.app, (file) => this.attachNote(file)).open();
+		});
 
 		this.inputEl = inputRow.createEl("textarea", {
 			cls: "zotero-chat-input",
@@ -169,17 +196,19 @@ export class ZoteroChatView extends ItemView {
 		this.inputEl.value = "";
 		this.setLoading(true);
 
-		// The raw question is used for semantic search.
-		// The attached note is passed separately so it only reaches the LLM, not the search query.
+		// Snapshot the attached notes and clear chips immediately so the user
+		// can start composing the next message while this one is in flight.
+		const notesSnapshot = [...this.attachedNotes];
+		this.attachedNotes = [];
+		this.renderAttachmentChips();
 
-		// Store only the user's visible question (not the full context blob).
-		// attachedNotePath is recorded for the save feature.
-		const userMsg: ChatMessage & { attachedNotePath?: string } = {
+		// Record attached note paths for the save feature (multiple notes supported).
+		const userMsg: ChatMessage & { attachedNotePaths?: string[] } = {
 			role: "user",
 			content: rawQuestion,
 			timestamp: Date.now(),
-			...(this.attachedNote
-				? { attachedNotePath: this.attachedNote.path }
+			...(notesSnapshot.length > 0
+				? { attachedNotePaths: notesSnapshot.map((n) => n.path) }
 				: {}),
 		};
 		this.messages.push(userMsg);
@@ -195,10 +224,10 @@ export class ZoteroChatView extends ItemView {
 			}
 
 			const result = await orchestrator.query(
-			rawQuestion,
-			this.messages.slice(0, -1),
-			this.attachedNote ?? undefined
-		);
+				rawQuestion,
+				this.messages.slice(0, -1),
+				notesSnapshot.length > 0 ? notesSnapshot : undefined
+			);
 
 			const assistantMsg: ChatMessage = {
 				role: "assistant",
@@ -368,9 +397,9 @@ export class ZoteroChatView extends ItemView {
 		for (const msg of this.messages) {
 			if (msg.role === "user") {
 				md += `**You:** ${msg.content}\n`;
-				const attachedPath = (msg as ChatMessage & { attachedNotePath?: string }).attachedNotePath;
-				if (attachedPath) {
-					md += `\n*📎 Attached: [[${attachedPath}]]*\n`;
+				const paths = (msg as ChatMessage & { attachedNotePaths?: string[] }).attachedNotePaths;
+				if (paths && paths.length > 0) {
+					md += `\n*📎 Attached: ${paths.map((p) => `[[${p}]]`).join(", ")}*\n`;
 				}
 				md += "\n";
 			} else {
@@ -389,39 +418,39 @@ export class ZoteroChatView extends ItemView {
 		new Notice(`Saved to ${fullPath}`);
 	}
 
-	private async attachActiveNote(): Promise<void> {
-		const file = this.app.workspace.getActiveFile();
-		if (!(file instanceof TFile)) {
-			new Notice("No note is currently open. Open a note first.");
+	private async attachNote(file: TFile): Promise<void> {
+		// Prevent attaching the same note twice
+		if (this.attachedNotes.some((n) => n.path === file.path)) {
+			new Notice(`"${file.basename}" is already attached`);
 			return;
 		}
-
 		const content = await this.app.vault.read(file);
-		this.attachedNote = { name: file.basename, path: file.path, content };
-		this.renderAttachmentChip();
+		this.attachedNotes.push({ name: file.basename, path: file.path, content });
+		this.renderAttachmentChips();
 	}
 
-	private renderAttachmentChip(): void {
-		if (!this.attachedNote) return;
+	private renderAttachmentChips(): void {
 		this.attachmentChipEl.empty();
+		if (this.attachedNotes.length === 0) {
+			this.attachmentChipEl.style.display = "none";
+			return;
+		}
 		this.attachmentChipEl.style.display = "flex";
-
-		const chip = this.attachmentChipEl.createDiv({
-			cls: "zotero-chat-attachment-chip",
-		});
-		chip.createSpan({ text: `📎 ${this.attachedNote.name}` });
-
-		const removeBtn = chip.createEl("button", {
-			cls: "zotero-chat-attachment-remove clickable-icon",
-			attr: { "aria-label": "Remove attachment" },
-		});
-		setIcon(removeBtn, "x");
-		removeBtn.addEventListener("click", () => this.removeAttachment());
-	}
-
-	private removeAttachment(): void {
-		this.attachedNote = null;
-		this.attachmentChipEl.style.display = "none";
-		this.attachmentChipEl.empty();
+		for (let i = 0; i < this.attachedNotes.length; i++) {
+			const note = this.attachedNotes[i];
+			const chip = this.attachmentChipEl.createDiv({
+				cls: "zotero-chat-attachment-chip",
+			});
+			chip.createSpan({ text: note.name });
+			const removeBtn = chip.createEl("button", {
+				cls: "zotero-chat-attachment-remove clickable-icon",
+				attr: { "aria-label": `Remove ${note.name}` },
+			});
+			setIcon(removeBtn, "x");
+			removeBtn.addEventListener("click", () => {
+				this.attachedNotes.splice(i, 1);
+				this.renderAttachmentChips();
+			});
+		}
 	}
 }
