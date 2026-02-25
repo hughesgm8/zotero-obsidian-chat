@@ -101,11 +101,14 @@ export class Orchestrator {
 	}
 
 	private looksLikeError(text: string): boolean {
-		const lower = text.toLowerCase();
+		const lower = text.toLowerCase().trim();
 		return (
 			lower.includes("already exists") ||
 			lower.includes("collection [") ||
-			(lower.startsWith("error") && !text.trimStart().startsWith("{"))
+			lower.startsWith("error") ||
+			lower.startsWith("semantic search error") ||
+			lower.startsWith("no semantically similar") ||
+			/^\d{3}\b/.test(lower) // HTTP status code like "404 not found"
 		);
 	}
 

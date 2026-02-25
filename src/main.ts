@@ -103,7 +103,8 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 				);
 				// Turn the status dot red in any open chat views
 				for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZOTERO_CHAT)) {
-					(leaf.view as ZoteroChatView).updateStatus();
+					const v = leaf.view as ZoteroChatView;
+					if (typeof v.updateStatus === "function") v.updateStatus();
 				}
 			};
 
@@ -121,7 +122,8 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 			// Update the status dot in any already-open chat views and trigger
 			// a layout refresh so the panel renders at the correct size.
 			for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZOTERO_CHAT)) {
-				(leaf.view as ZoteroChatView).updateStatus();
+				const v = leaf.view as ZoteroChatView;
+				if (typeof v.updateStatus === "function") v.updateStatus();
 			}
 			this.app.workspace.trigger("resize");
 		} catch (err) {
