@@ -50,6 +50,10 @@ export class MCPServerManager {
 		this.stderrLog = [];
 		this.lastError = null;
 
+		// Kill any lingering zotero-mcp process from a previous plugin run.
+		// Without this, the old process may still hold our port when we try to bind.
+		await this.killStaleMCPProcess();
+
 		const env = { ...process.env, PATH: getShellPATH() };
 
 		this.process = spawn(
@@ -82,8 +86,8 @@ export class MCPServerManager {
 			this.process = null;
 		});
 
-		this.process.on("exit", (code) => {
-			console.log(`zotero-mcp exited with code ${code}`);
+		this.process.on("exit", (code, signal) => {
+			console.log(`zotero-mcp exited with code ${code}, signal ${signal}`);
 			this.process = null;
 			if (code !== 0 && code !== null) {
 				this.lastError = `zotero-mcp exited with code ${code}.`;
@@ -118,7 +122,34 @@ export class MCPServerManager {
 		return [...this.stderrLog];
 	}
 
-	private async waitForReady(timeoutMs = 30000): Promise<void> {
+	private async killStaleMCPProcess(): Promise<void> {
+		try {
+			// Find the process that is currently listening on our port.
+			// Using lsof + -sTCP:LISTEN is more targeted than pgrep: it matches
+			// exactly the process holding the port, not any process by name.
+			// -n skips hostname resolution (faster). -t outputs only PIDs.
+			const result = execSync(
+				`lsof -nti :${this.port} -sTCP:LISTEN`,
+				{ encoding: "utf-8", timeout: 2000 }
+			).trim();
+
+			const pids = result.split("\n").filter(Boolean);
+			if (pids.length === 0) return;
+
+			for (const pid of pids) {
+				// SIGKILL (-9) releases the port immediately; SIGTERM can leave
+				// the socket in TIME_WAIT for several seconds, causing EADDRINUSE.
+				try { execSync(`kill -9 ${pid.trim()}`, { timeout: 1000 }); } catch { /* already gone */ }
+			}
+
+			// Give the OS time to release the socket after SIGKILL
+			await new Promise((resolve) => setTimeout(resolve, 2000));
+		} catch {
+			// lsof exits with code 1 when no matches — not an error
+		}
+	}
+
+	private async waitForReady(timeoutMs = 60000): Promise<void> {
 		const start = Date.now();
 		const pollInterval = 500;
 

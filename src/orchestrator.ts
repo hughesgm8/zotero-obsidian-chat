@@ -142,6 +142,7 @@ export class Orchestrator {
 		key: string,
 		metadataStr: string
 	): ZoteroSource | null {
+		// Try JSON first (in case the format ever changes)
 		try {
 			const data = JSON.parse(metadataStr);
 			return {
@@ -157,15 +158,57 @@ export class Orchestrator {
 				abstract: data.abstractNote || data.abstract,
 			};
 		} catch {
-			// If not JSON, try to extract from plain text
-			return {
-				key,
-				title: metadataStr.slice(0, 100),
-				authors: "",
-				year: "n.d.",
-				itemType: "unknown",
-			};
+			// Not JSON — parse the markdown returned by format_item_metadata.
+			// Lines look like:
+			//   # Title of the Paper
+			//   **Type:** journalArticle
+			//   **Authors:** Smith, J.; Doe, A.
+			//   **Date:** 2023
+			//   ## Abstract
+			//   Abstract text here...
 		}
+
+		const lines = metadataStr.split("\n");
+		let title = "Untitled";
+		let authors = "";
+		let year = "n.d.";
+		let itemType = "unknown";
+		const abstractLines: string[] = [];
+		let inAbstract = false;
+
+		for (const line of lines) {
+			const t = line.trim();
+			if (t.startsWith("# ")) {
+				title = t.slice(2).trim();
+				inAbstract = false;
+			} else if (/^\*\*Type:\*\*/.test(t)) {
+				itemType = t.replace(/^\*\*Type:\*\*\s*/, "").trim();
+				inAbstract = false;
+			} else if (/^\*\*Authors:\*\*/.test(t)) {
+				authors = t.replace(/^\*\*Authors:\*\*\s*/, "").trim();
+				inAbstract = false;
+			} else if (/^\*\*Date:\*\*/.test(t)) {
+				const dateStr = t.replace(/^\*\*Date:\*\*\s*/, "").trim();
+				const m = dateStr.match(/\b(\d{4})\b/);
+				year = m ? m[1] : "n.d.";
+				inAbstract = false;
+			} else if (t === "## Abstract") {
+				inAbstract = true;
+			} else if (t.startsWith("## ")) {
+				inAbstract = false;
+			} else if (inAbstract && t) {
+				abstractLines.push(t);
+			}
+		}
+
+		return {
+			key,
+			title,
+			authors,
+			year,
+			itemType,
+			abstract: abstractLines.length > 0 ? abstractLines.join(" ") : undefined,
+		};
 	}
 
 	private formatAuthors(
