@@ -7,14 +7,16 @@ Maintain a system map the user can understand. The project's status is updated r
 - Full plugin scaffolding (manifest, package.json, tsconfig, esbuild)
 - TypeScript compiles with zero errors, `npm run build` produces `main.js`
 - Settings tab with conditional provider fields (re-renders on dropdown change)
-- MCP server manager (auto-spawn/kill child process lifecycle)
-- MCP client (JSON-RPC 2.0 over HTTP with SSE support)
+- MCP server manager: auto-spawn, warm-server reuse across reloads (`tryReuseExistingServer`), `stop()` keeps server alive
+- MCP client (JSON-RPC 2.0 over HTTP with SSE support via Node `http` module)
 - LLM provider abstraction (Ollama, OpenRouter, Anthropic)
-- Deterministic query orchestrator (search → metadata → LLM)
+- Deterministic query orchestrator (search → metadata → full text → LLM)
 - Sidebar chat view with markdown rendering, citations, copy button
-
-## 🚧 In Progress
-- End-to-end testing in a real Obsidian vault (plugin has not been loaded yet)
+- Save conversation to vault (floppy disk button → `Zotero Chats/YYYY-MM-DD/` folder)
+- Attach active note as context (paperclip button → chip UI, prepends note content to query)
+- Sources citations: correctly parses markdown format returned by `zotero_get_item_metadata`
+- UI layout: `ResizeObserver` in `onOpen()` fires `workspace.trigger("resize")` as soon as panel gets real dimensions (no more squash on cold open)
+- Tested end-to-end in a real Obsidian vault (confirmed working)
 
 ## 📋 Planned
 - "Test Connection" buttons in settings for MCP and LLM
@@ -77,4 +79,4 @@ Modeled after the Obsidian Copilot plugin: sidebar panel, markdown-formatted res
 
 ## Reference Documents
 - Implementation plan: `Agent Configuration/changelogs/IMPLEMENTATION_PLAN_v0.1.0.md`
-- Changelog: `Agent Configuration/changelogs/2026-02-23.md`
+- Changelogs: `Agent Configuration/changelogs/2026-02-23.md`, `2026-02-24.md`, `2026-02-25.md`
