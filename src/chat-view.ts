@@ -169,13 +169,8 @@ export class ZoteroChatView extends ItemView {
 		this.inputEl.value = "";
 		this.setLoading(true);
 
-		// Build the question sent to the orchestrator.
-		// If a note is attached, prepend its content as context.
-		let orchestratorQuestion = rawQuestion;
-		if (this.attachedNote) {
-			orchestratorQuestion =
-				`[Attached note: "${this.attachedNote.name}"]\n${this.attachedNote.content}\n\n---\n\n${rawQuestion}`;
-		}
+		// The raw question is used for semantic search.
+		// The attached note is passed separately so it only reaches the LLM, not the search query.
 
 		// Store only the user's visible question (not the full context blob).
 		// attachedNotePath is recorded for the save feature.
@@ -199,7 +194,11 @@ export class ZoteroChatView extends ItemView {
 				);
 			}
 
-			const result = await orchestrator.query(orchestratorQuestion, this.messages.slice(0, -1));
+			const result = await orchestrator.query(
+			rawQuestion,
+			this.messages.slice(0, -1),
+			this.attachedNote ?? undefined
+		);
 
 			const assistantMsg: ChatMessage = {
 				role: "assistant",
@@ -397,16 +396,7 @@ export class ZoteroChatView extends ItemView {
 			return;
 		}
 
-		const raw = await this.app.vault.read(file);
-		const max = this.plugin.settings.fullTextMaxChars;
-		const content = raw.length > max ? raw.slice(0, max) : raw;
-
-		if (raw.length > max) {
-			new Notice(
-				`Note is long — only the first ${max.toLocaleString()} characters will be used`
-			);
-		}
-
+		const content = await this.app.vault.read(file);
 		this.attachedNote = { name: file.basename, path: file.path, content };
 		this.renderAttachmentChip();
 	}

@@ -24,7 +24,8 @@ export class Orchestrator {
 
 	async query(
 		question: string,
-		conversationHistory: ChatMessage[]
+		conversationHistory: ChatMessage[],
+		attachedNote?: { name: string; content: string }
 	): Promise<OrchestratorResult> {
 		// 1) Semantic search in Zotero
 		const searchResult = await this.mcpClient.callTool(
@@ -88,7 +89,8 @@ export class Orchestrator {
 		const messages = this.buildMessages(
 			question,
 			context,
-			conversationHistory
+			conversationHistory,
+			attachedNote
 		);
 
 		// 7) Send to LLM
@@ -257,7 +259,8 @@ export class Orchestrator {
 	private buildMessages(
 		question: string,
 		context: string,
-		history: ChatMessage[]
+		history: ChatMessage[],
+		attachedNote?: { name: string; content: string }
 	): LLMMessage[] {
 		const messages: LLMMessage[] = [
 			{
@@ -275,11 +278,14 @@ export class Orchestrator {
 			});
 		}
 
-		// Add current question with Zotero context
-		messages.push({
-			role: "user",
-			content: `Context from Zotero library:\n\n${context}\n\n---\n\nQuestion: ${question}`,
-		});
+		// Build user message: Zotero context, optional attached note, then question
+		let userContent = `Context from Zotero library:\n\n${context}\n\n---\n\n`;
+		if (attachedNote) {
+			userContent += `Attached note ("${attachedNote.name}"):\n\n${attachedNote.content}\n\n---\n\n`;
+		}
+		userContent += `Question: ${question}`;
+
+		messages.push({ role: "user", content: userContent });
 
 		return messages;
 	}
