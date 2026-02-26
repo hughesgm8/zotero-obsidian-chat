@@ -44,6 +44,21 @@ export class Orchestrator {
 		// 2) Parse item keys from search results
 		const itemKeys = this.extractItemKeys(searchResult);
 
+		// Gather source keys from the last assistant message so follow-up
+		// questions can reference previously discussed papers.
+		const carryForwardKeys: Set<string> = new Set();
+		if (conversationHistory.length > 0) {
+			for (let i = conversationHistory.length - 1; i >= 0; i--) {
+				const msg = conversationHistory[i];
+				if (msg.role === "assistant" && msg.sources && msg.sources.length > 0) {
+					for (const src of msg.sources) {
+						carryForwardKeys.add(src.key);
+					}
+					break;
+				}
+			}
+		}
+
 		// 3) Fetch metadata for each item
 		const sources: ZoteroSource[] = [];
 		for (const key of itemKeys) {
@@ -61,22 +76,45 @@ export class Orchestrator {
 			}
 		}
 
-		// 4) Fetch full text for top N results
+		// 3b) Add carry-forward sources not found by the new search
+		const existingKeys = new Set(sources.map(s => s.key));
+		for (const key of carryForwardKeys) {
+			if (!existingKeys.has(key)) {
+				try {
+					const metadata = await this.mcpClient.callTool(
+						"zotero_get_item_metadata",
+						{ item_key: key }
+					);
+					const source = this.parseMetadata(key, metadata);
+					if (source) {
+						sources.push(source);
+					}
+				} catch (err) {
+					console.warn(`Failed to fetch carry-forward metadata for ${key}:`, err);
+				}
+			}
+		}
+
+		// 4) Fetch full text for top N results — prioritize carry-forward papers
 		const fullTexts: Map<string, string> = new Map();
-		const topN = Math.min(this.settings.fullTextTopN, sources.length);
+		const fullTextCandidates = [
+			...sources.filter(s => carryForwardKeys.has(s.key)),
+			...sources.filter(s => !carryForwardKeys.has(s.key)),
+		];
+		const topN = Math.min(this.settings.fullTextTopN, fullTextCandidates.length);
 		for (let i = 0; i < topN; i++) {
 			try {
 				const text = await this.mcpClient.callTool(
 					"zotero_get_item_fulltext",
-					{ item_key: sources[i].key }
+					{ item_key: fullTextCandidates[i].key }
 				);
 				if (text && text.trim()) {
 					const truncated = text.slice(0, this.settings.fullTextMaxChars);
-					fullTexts.set(sources[i].key, truncated);
+					fullTexts.set(fullTextCandidates[i].key, truncated);
 				}
 			} catch (err) {
 				console.warn(
-					`Failed to fetch full text for ${sources[i].key}:`,
+					`Failed to fetch full text for ${fullTextCandidates[i].key}:`,
 					err
 				);
 			}
