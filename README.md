@@ -52,6 +52,8 @@ You can now close Terminal. Ollama runs quietly in the background whenever you n
 
 zotero-mcp is the bridge between your Zotero library and the plugin. It reads your papers and builds a searchable index so the AI can find relevant ones.
 
+> **Having trouble with this step?** The [zotero-mcp project page](https://github.com/54yyyu/zotero-mcp) is the best place to look — it has the latest installation notes and an issue tracker for known problems.
+
 ### 2a. Allow Zotero to talk to other apps
 
 1. Open **Zotero**
