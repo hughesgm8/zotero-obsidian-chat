@@ -225,10 +225,10 @@ export class PaperImporter {
 			userContent += `\n**My research focus:**\n${this.settings.researchDescription}\n`;
 		}
 
-		userContent += `\nPlease write the following sections using markdown headings (## Summary, ## Interesting Takeaways, ## Critique${this.settings.researchDescription.trim() ? ", ## Relevance" : ""}):\n\n`;
+		userContent += `\nPlease write the following sections using markdown headings (## Summary, ## Interesting Takeaways, ## Questions for Active Engagement${this.settings.researchDescription.trim() ? ", ## Relevance" : ""}):\n\n`;
 		userContent += `- **Summary**: 2-3 paragraphs covering the paper's main argument, methodology, and findings.\n`;
 		userContent += `- **Interesting Takeaways**: Bullet points of the most notable insights.\n`;
-		userContent += `- **Critique**: Methodological strengths and weaknesses, limitations, or gaps.\n`;
+		userContent += `- **Questions for Active Engagement**: Generate 4-5 questions to help the researcher engage actively with this paper. Each question must be specific to a named element of this paper — a particular method, finding, claim, or dataset — not the topic in general. Focus primarily on relevance to the researcher's work described above: how might this paper's methods, findings, or framing apply, complicate, or inform their research? Also include 1-2 questions about open questions or gaps the paper itself raises or leaves unresolved. Avoid generic questions that could apply to any paper.\n`;
 
 		if (this.settings.researchDescription.trim()) {
 			userContent += `- **Relevance**: How this paper relates to my research focus described above.\n`;
@@ -286,7 +286,7 @@ export class PaperImporter {
 
 		note += `## Summary\n${sections["Summary"] || "*No summary generated.*"}\n\n`;
 		note += `## Interesting Takeaways\n${sections["Interesting Takeaways"] || "*No takeaways generated.*"}\n\n`;
-		note += `## Critique\n${sections["Critique"] || "*No critique generated.*"}\n\n`;
+		note += `## Questions for Active Engagement\n${sections["Questions for Active Engagement"] || "*No questions generated.*"}\n\n`;
 
 		if (this.settings.researchDescription.trim()) {
 			note += `## Relevance\n${sections["Relevance"] || "*No relevance analysis generated.*"}\n\n`;
