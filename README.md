@@ -66,19 +66,21 @@ zotero-mcp is the bridge between your Zotero library and the plugin. It reads yo
    ```
    python3 --version
    ```
-3. You should see something like `Python 3.11.4`. The number needs to be **3.10 or higher**.
+3. You should see something like `Python 3.12.x`. The number needs to be **between 3.10 and 3.13** — Python 3.12 is recommended. Python 3.14 and above are not currently supported by zotero-mcp's dependencies.
 
-   If you see an error or a version below 3.10, download the latest Python from [python.org/downloads](https://www.python.org/downloads/) and install it like any Mac app, then repeat this step.
+   If you see an error, a version below 3.10, or 3.14+, install Python 3.12 from [python.org/downloads](https://www.python.org/downloads/) and install it like any Mac app, then repeat this step.
 
 ### 2c. Install zotero-mcp
 
-In Terminal, paste this and press Enter:
+The recommended way to install zotero-mcp is via **pipx**, which handles the installation cleanly and makes the `zotero-mcp` command available without PATH issues. In Terminal, paste these commands one at a time and press Enter after each:
 
 ```
-pip3 install zotero-mcp-server
+brew install pipx
+pipx install zotero-mcp-server
+pipx ensurepath
 ```
 
-Wait for it to finish. You'll see a lot of text scroll by — that's normal.
+Once done, **close Terminal and open a new window** before continuing — this is needed for the `zotero-mcp` command to be recognised.
 
 ### 2d. Run the setup
 
@@ -143,7 +145,10 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
 ## Step 4 — Configure the plugin
 
 1. Go to **Settings → Zotero MCP Chat**
-2. Fill in the **zotero-mcp path** — this is the path to the `zotero-mcp` command on your computer. If you're not sure, open Terminal, type `which zotero-mcp`, and paste the result.
+2. Fill in the **zotero-mcp path** — this is the full path to the `zotero-mcp` command on your computer.
+   - Open Terminal and run `which zotero-mcp`
+   - Copy the result and paste it into the setting
+   - **Important:** the path must be absolute — if the result starts with `~`, expand it manually (e.g. `~` becomes `/Users/yourname`)
 3. Under **AI Provider**, select **Ollama**
 4. The **Model** field should say `llama3.2` (or whatever model you downloaded in Step 1)
 5. Click the **X** to close Settings

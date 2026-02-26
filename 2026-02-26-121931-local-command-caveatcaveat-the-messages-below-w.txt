@@ -1,0 +1,171 @@
+
+▗ ▗   ▖ ▖  Claude Code v2.1.59
+           Opus 4.6 · Claude Pro
+  ▘▘ ▝▝    ~/Documents/CODE/zotero-plugin-dev
+
+❯ /model 
+  ⎿  Set model to opus (claude-opus-4-6) with high effort
+
+❯ /model 
+  ⎿  Set model to opus (claude-opus-4-6) with medium effort
+
+❯ The next phase of this would potentially be quite a bit feat and I'm not  
+  sure how to go about it. I currently use the Zotero Integration plugin    
+  (repository here:                                                         
+  https://github.com/mgmeyers/obsidian-zotero-integration) to import        
+  references from Zotero as notes into my Obsidian. However, it doesn't     
+  work super well because it only imports highlighted or annotated text     
+  from Zotero, not much else (like not even an abstract). I would love to   
+  expand that functionality by using the functionality I already have with  
+  the Zotero MCP + DeepSeek integration to import a LLM-generated summary   
+  of the paper. How feasible is this?                                       
+
+⏺ This is an interesting idea. Let me explore what we have to work with — both
+  our current plugin's MCP capabilities and how the Zotero Integration plugin
+  works — to assess feasibility.
+
+⏺ 2 Explore agents finished (ctrl+o to expand)
+   ├─ Explore current MCP capabilities · 21 tool uses · 41.7k tokens
+   │  ⎿  Done
+   └─ Explore Zotero Integration plugin · 13 tool uses · 21.6k tokens
+      ⎿  Done
+
+⏺ Good news — this is very feasible. You already have all the building blocks in
+   place:
+
+  - zotero-mcp can fetch metadata (abstract, authors, etc.) AND full text of any
+   paper
+  - LLM providers (DeepSeek/Ollama/etc.) are already wired up
+  - Orchestrator pattern already shows how to chain MCP calls → LLM
+
+  The main question is about the workflow/UX, not technical feasibility. Let me
+  ask a few things to narrow down the approach:
+
+⏺ User answered Claude's questions:
+  ⎿  · How do you want to trigger the AI summary generation? → Replace 
+     Zotero Integration
+     · What should the AI summary include? (select all that apply) → Paper 
+     summary, Abstract (from Zotero), Key takeaways / bullet points, 
+     Relevance to your research
+
+⏺ Great — you want the full experience: our own import command that replaces
+  Zotero Integration entirely, with all four content types. A few more questions
+   to nail down the UX:
+
+⏺ User answered Claude's questions:
+  ⎿  · How do you want to select which paper(s) to import? → Ideally I'd 
+     like this functionality to be separate from the current sidebar UI, 
+     triggered via the command palette like the existing Zotero Integration
+      plugin. It feels distinct from the chat functionality and I don't 
+     know that it makes sense to trigger from there, though we could 
+     potentially add a button there in the future.
+     · Where should the imported note be saved? → Both 1 and 2: it should 
+     be configurable in settings but I would personally set it the same as 
+     my Zotero integration. I can also give you the path to my current 
+     Zotero Integration plugin configuration if that helps.
+     · For 'relevance to your research' — how should it know your research 
+     context? → Both
+
+⏺ That's very clear. One last question about the note format:
+
+⏺ User answered Claude's questions:
+  ⎿  · Can you share your current Zotero Integration note template so I can
+      match the format? (If you know the path, share it — otherwise I can 
+     look for it in your vault config) → I'll share the path
+     · Should the import command support batch import (multiple papers at 
+     once) from the start, or is single-paper import enough for v1? → 
+     Single paper first
+
+⏺ Got it — single paper, command palette triggered. Whenever you're ready, share
+   the template path and I'll incorporate it into the plan.
+
+  In the meantime, let me start drafting the implementation plan based on
+  everything we've discussed. I'll also look at how to wire up a command palette
+   search modal in our existing plugin.
+
+⏺ Plan(Plan import command architecture)
+  ⎿  Done (13 tool uses · 40.4k tokens · 2m 18s)
+  (ctrl+o to expand)
+
+❯ Here is the template path: "/Users/gabrielmhughes/Library/Mobile          
+  Documents/iCloud~md~obsidian/Documents/Obsidian                           
+  Vault/04_Templates/source-notes.md"                                       
+
+⏺ Let me read that template before finalizing the plan.
+
+⏺ Read 1 file (ctrl+o to expand)
+
+⏺ This is very revealing. You already have sections for Summary, Interesting 
+  Takeaways, Critique, and Relevance in your template — but they're empty and
+  you fill them manually. Our AI import would auto-fill those exact sections.
+
+  Let me read a couple of key source files to verify the plan, then I'll write
+  it up.
+
+⏺ Read 3 files (ctrl+o to expand)
+
+⏺ Now let me check the settings UI and styles for reference.
+
+⏺ Searched for 1 pattern, read 2 files (ctrl+o to expand)
+
+⏺ Now I have everything. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  /plan to preview
+
+⏺ Thanks for sharing the template — it was very informative. Your existing
+  template already has the exact sections (Summary, Interesting Takeaways,
+  Critique, Relevance) that you've been filling manually. The AI import will
+  auto-generate those.
+
+  Key design decisions in the plan:
+  - Note format matches your existing template — same frontmatter structure
+  (Title, Year, Authors, Tags), same section names, so your vault stays
+  consistent
+  - Adds ai-imported tag to distinguish from Zotero Integration imports
+  - Skips annotations section since this flow doesn't pull PDF highlights (you'd
+   still use Zotero Integration for that)
+  - Plain Modal instead of SuggestModal since our Zotero search is async
+  (network call)
+  - Full text sent to LLM untruncated (unlike chat which caps at 4000 chars)
+  since we're importing one paper and want max quality
+  ⎿  Tool use rejected with user message: Can we save this implementation plan 
+     and any relevant additional context to come back to? I have a more 
+     immediate issue with the Zotero MCP plugin that I would like to address 
+     first.
+
+⏺ Of course. Let me save the plan and context to the changelogs directory per
+  our project conventions.
+
+⏺ Write(Agent Configuration/changelogs/IMPLEMENTATION_PLAN_smart_import.md)
+  ⎿  Wrote 170 lines to Agent 
+     Configuration/changelogs/IMPLEMENTATION_PLAN_smart_import.md
+      1 # Smart Import from Zotero — Implementation Plan (Saved 2026-02-2
+        6)
+      2 
+      3 **Status:** Planning complete, not yet implemented. Gabriel pause
+        d this to address another issue.
+      4 
+      5 ## Context
+      6 
+      7 Gabriel currently uses the Zotero Integration plugin to import re
+        ferences as notes, but it only imports highlighted/annotated text
+         — not abstracts, summaries, or any AI analysis. His existing tem
+        plate (`04_Templates/source-notes.md` in the Obsidian vault) alre
+        ady has empty sections for Summary, Interesting Takeaways, Critiq
+        ue, and Relevance that he fills manually. This feature replaces t
+        hat workflow: a command-palette-triggered import that uses zotero
+        -mcp to fetch paper data and the LLM to auto-generate those secti
+        ons.
+      8 
+      9 ## Gabriel's Template (for reference)
+     … +160 lines (ctrl+o to expand)
+
+⏺ Saved the full plan to Agent 
+  Configuration/changelogs/IMPLEMENTATION_PLAN_smart_import.md. It includes all
+  context: your preferences, template details, architecture decisions, and
+  implementation steps. We can pick it back up anytime.
+
+  What's the issue you'd like to address with the Zotero MCP plugin?
+
+✻ Sautéed for 6m 54s
