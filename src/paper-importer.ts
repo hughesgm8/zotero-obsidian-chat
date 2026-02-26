@@ -23,8 +23,8 @@ export class PaperImporter {
 
 	async search(query: string): Promise<ZoteroSource[]> {
 		const searchResult = await this.mcpClient.callTool(
-			"zotero_semantic_search",
-			{ query }
+			"zotero_search_items",
+			{ query, qmode: "titleCreatorYear" }
 		);
 
 		if (!searchResult || !searchResult.trim()) return [];
@@ -51,13 +51,16 @@ export class PaperImporter {
 	async importPaper(
 		source: ZoteroSource
 	): Promise<{ filePath: string; title: string }> {
-		// 1) Fetch full text (untruncated — single paper, max quality)
+		// 1) Fetch full text (max 100k chars to avoid LLM API 500s on huge papers)
 		let fullText = "";
 		try {
-			fullText = await this.mcpClient.callTool(
+			const rawText = await this.mcpClient.callTool(
 				"zotero_get_item_fulltext",
 				{ item_key: source.key }
 			);
+			if (rawText) {
+				fullText = rawText.slice(0, 100000);
+			}
 		} catch (err) {
 			console.warn("No full text available, proceeding with abstract only:", err);
 		}
@@ -66,7 +69,13 @@ export class PaperImporter {
 		const messages = this.buildImportPrompt(source, fullText);
 
 		// 3) Call LLM
-		const response = await this.llmProvider.chat(messages);
+		let response;
+		try {
+			response = await this.llmProvider.chat(messages);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			throw new Error(`AI generation failed: ${msg}. This often happens if the paper is too long for the model or the API is unavailable.`);
+		}
 
 		// 4) Parse sections from LLM response
 		const sections = this.parseLLMSections(response.content);
