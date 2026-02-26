@@ -215,6 +215,42 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// --- Smart Import Section ---
+		containerEl.createEl("h2", { text: "Smart Import" });
+
+		new Setting(containerEl)
+			.setName("Import folder")
+			.setDesc(
+				"Folder in your vault where imported paper notes will be saved. Created automatically if it doesn't exist."
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Zotero Notes")
+					.setValue(this.plugin.settings.importFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.importFolder =
+							value.trim() || "Zotero Notes";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Your research interests")
+			.setDesc(
+				"Describe your research focus so the AI can assess how each imported paper relates to your work. Leave blank to skip the relevance section."
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"e.g., I study the effects of social media on adolescent mental health..."
+					)
+					.setValue(this.plugin.settings.researchDescription)
+					.onChange(async (value) => {
+						this.plugin.settings.researchDescription = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
 		// --- Advanced Section (collapsed) ---
 		const advancedDetails = containerEl.createEl("details");
 		advancedDetails.createEl("summary", {

@@ -26,6 +26,9 @@ Maintain a system map the user can understand. The project's status is updated r
 - Chat history: browse and reload saved conversations (design TBD)
 - Chat settings panel in sidebar (future, low priority)
 
+## ✅ Recently Shipped
+- **Smart Import** (2026-02-26): Command palette → "Import paper from Zotero with AI summary" → search modal → pick paper → LLM generates Summary, Takeaways, Critique, Relevance → note saved to configurable folder with `ai-imported` tag. New settings: import folder, research interests. Files: `src/paper-importer.ts`, `src/import-modal.ts`.
+
 ## ⚠️ Known Issues
 - **zotero-mcp ChromaDB bug**: `chroma_client.py` line 194 uses `create_collection()` instead of `get_or_create_collection()`. When Claude Desktop's zotero-mcp processes are running simultaneously, they share `~/.config/zotero-mcp/chroma_db` and the plugin's instance fails with "Collection [zotero_library] already exists". **Workaround applied**: edited installed package at `/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/zotero_mcp/chroma_client.py` line 194. This will be overwritten by `pip upgrade`. Gabriel is considering forking zotero-mcp long-term.
 - **zotero-mcp crashes after queries** (exit code 1) — likely related to the above ChromaDB issue. Plugin now shows a Notice and turns status dot red when this happens.
@@ -66,6 +69,8 @@ The plugin handles MCP calls directly rather than delegating tool selection to t
 | `src/mcp-server.ts` | Spawns/kills the `zotero-mcp` child process |
 | `src/mcp-client.ts` | JSON-RPC 2.0 client for MCP over HTTP |
 | `src/orchestrator.ts` | search → metadata → LLM pipeline |
+| `src/paper-importer.ts` | Smart Import: search Zotero, fetch data, call LLM, create note |
+| `src/import-modal.ts` | Smart Import: search modal UI (async search, clickable results) |
 | `src/chat-view.ts` | Sidebar `ItemView` with chat UI |
 | `src/llm/index.ts` | Factory that creates the right LLM provider |
 | `src/llm/llm-provider.ts` | `LLMProvider` interface |

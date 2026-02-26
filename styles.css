@@ -254,3 +254,67 @@
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+
+/* ========================================
+   Smart Import Modal
+   ======================================== */
+
+.zotero-import-modal {
+	padding: 16px;
+}
+
+.zotero-import-modal h3 {
+	margin-top: 0;
+	margin-bottom: 12px;
+}
+
+.zotero-import-search {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	margin-bottom: 8px;
+}
+
+.zotero-import-search:focus {
+	border-color: var(--interactive-accent);
+	outline: none;
+}
+
+.zotero-import-status {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+	min-height: 20px;
+	margin-bottom: 4px;
+}
+
+.zotero-import-results {
+	max-height: 360px;
+	overflow-y: auto;
+}
+
+.zotero-import-result {
+	padding: 8px 12px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.zotero-import-result:hover {
+	background-color: var(--background-secondary);
+}
+
+.zotero-import-result-title {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+}
+
+.zotero-import-result-meta {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin-top: 2px;
+}

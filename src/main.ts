@@ -7,6 +7,8 @@ import { MCPClient } from "./mcp-client";
 import { createLLMProvider } from "./llm/index";
 import { Orchestrator } from "./orchestrator";
 import { ZoteroChatView, VIEW_TYPE_ZOTERO_CHAT } from "./chat-view";
+import { PaperImporter } from "./paper-importer";
+import { ImportModal } from "./import-modal";
 
 export default class ZoteroMCPChatPlugin extends Plugin {
 	settings!: ZoteroMCPSettings;
@@ -35,6 +37,29 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 			name: "Open Zotero Chat",
 			callback: () => {
 				this.activateChatView();
+			},
+		});
+
+		// Command to import paper
+		this.addCommand({
+			id: "import-paper-from-zotero",
+			name: "Import paper from Zotero with AI summary",
+			callback: () => {
+				if (!this.mcpClient) {
+					new Notice(
+						"Zotero Chat: The Zotero server is not running. Please check your settings.",
+						8000
+					);
+					return;
+				}
+				const llm = createLLMProvider(this.settings);
+				const importer = new PaperImporter(
+					this.app,
+					this.mcpClient,
+					llm,
+					this.settings
+				);
+				new ImportModal(this.app, importer).open();
 			},
 		});
 
@@ -81,6 +106,10 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 
 	getOrchestrator(): Orchestrator | null {
 		return this.orchestrator;
+	}
+
+	getMCPClient(): MCPClient | null {
+		return this.mcpClient;
 	}
 
 	private async startMCPServer(): Promise<void> {

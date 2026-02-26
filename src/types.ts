@@ -28,6 +28,10 @@ export interface ZoteroMCPSettings {
 
 	// Conversations
 	saveFolder: string;
+
+	// Smart Import
+	importFolder: string;
+	researchDescription: string;
 }
 
 export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
@@ -55,6 +59,9 @@ export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
 		"If no relevant papers are found, say so honestly.",
 
 	saveFolder: "Zotero Chats",
+
+	importFolder: "Zotero Notes",
+	researchDescription: "",
 };
 
 export interface ChatMessage {
