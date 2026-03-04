@@ -11,7 +11,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - MCP client (JSON-RPC 2.0 over HTTP with SSE support via Node `http` module — `requestUrl` and `fetch` were tried first and failed; see ARCHITECTURAL_DECISIONS.md)
 - LLM provider abstraction (Ollama, OpenRouter, Anthropic)
 - Deterministic query orchestrator (search → metadata → full text → LLM)
-- Sidebar chat view with markdown rendering, citations, copy button
+- Sidebar chat view with markdown rendering, citations, copy button (copies full response including sources; user messages are text-selectable)
 - Save conversation to vault (floppy disk button → `Zotero Chats/YYYY-MM-DD/` folder)
 - Attach active note as context (@ button → fuzzy note picker modal → chip UI; note passed separately to LLM, not to semantic search; full note content sent, no truncation; multi-note support)
 - Sources citations: correctly parses markdown format returned by `zotero_get_item_metadata`
