@@ -26,6 +26,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - **Move new chat + save buttons** from top-right header to just above the input area (Gabriel's preference)
 - Chat history: browse and reload saved conversations (design TBD)
 - Chat settings panel in sidebar (future, low priority)
+- More detailed and adaptive context on user's research interests to expand the "Relevance" section of paper imports
 
 ## ✅ Recently Shipped
 - **Smart Import** (2026-02-26): Command palette → "Import paper from Zotero with AI summary" → search modal → pick paper → LLM generates Summary, Takeaways, Questions for Active Engagement, Relevance → note saved to configurable folder with `ai-imported` tag. New settings: import folder, research interests. Files: `src/paper-importer.ts`, `src/import-modal.ts`.
