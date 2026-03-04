@@ -33,6 +33,28 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 					})
 			);
 
+		const mcpTestSetting = new Setting(containerEl)
+			.setName("Test connection")
+			.setDesc("Check that the Zotero MCP server is reachable.")
+			.addButton((btn) => {
+				btn.setButtonText("Test connection").onClick(async () => {
+					btn.setButtonText("Testing…").setDisabled(true);
+					const client = this.plugin.getMCPClient();
+					if (!client) {
+						mcpTestSetting.setDesc("✗ Server not running — try reloading the plugin.");
+					} else {
+						try {
+							await client.listTools();
+							mcpTestSetting.setDesc("✓ Connected");
+						} catch (e) {
+							const msg = e instanceof Error ? e.message : String(e);
+							mcpTestSetting.setDesc(`✗ ${msg}`);
+						}
+					}
+					btn.setButtonText("Test connection").setDisabled(false);
+				});
+			});
+
 		// --- LLM Section ---
 		containerEl.createEl("h2", { text: "AI Model" });
 
@@ -133,6 +155,24 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 						})
 				);
 		}
+
+		const llmTestSetting = new Setting(containerEl)
+			.setName("Test connection")
+			.setDesc("Check that the selected AI provider is reachable.")
+			.addButton((btn) => {
+				btn.setButtonText("Test connection").onClick(async () => {
+					btn.setButtonText("Testing…").setDisabled(true);
+					try {
+						const provider = createLLMProvider(this.plugin.settings);
+						const ok = await provider.testConnection();
+						llmTestSetting.setDesc(ok ? "✓ Connected" : "✗ Connection failed — check your API key and model name.");
+					} catch (e) {
+						const msg = e instanceof Error ? e.message : String(e);
+						llmTestSetting.setDesc(`✗ ${msg}`);
+					}
+					btn.setButtonText("Test connection").setDisabled(false);
+				});
+			});
 
 		// --- Behavior Section ---
 		containerEl.createEl("h2", { text: "Behavior" });
