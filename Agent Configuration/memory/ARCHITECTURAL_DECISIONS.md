@@ -19,22 +19,24 @@ If we add "Smart mode" for capable models (Claude, GPT-4), we'd let those models
 
 ---
 
-## Decision: Custom MCP client instead of the MCP TypeScript SDK
+## Decision: Custom MCP client using Node.js `http` module — *2026-02-23*
 
 ### Why This Matters
-The plugin actually works inside Obsidian's Electron renderer, which has restrictions on Node.js HTTP modules.
+The plugin runs inside Obsidian's Electron renderer, which has CORS restrictions and SSE streaming limitations that ruled out the obvious HTTP options one by one.
 
 ### Options We Considered
-1. **Custom JSON-RPC client using Obsidian's `requestUrl`**: Good for guaranteed compatibility, bad for missing SDK features (reconnection, schema validation)
-2. **MCP TypeScript SDK**: Good for full protocol support, bad because it depends on Node.js `http`/`https` modules that don't work in Electron's renderer process
+1. **Obsidian's `requestUrl`**: Good for CORS bypass (it's Obsidian's own API), bad because it buffers the full response before returning — SSE streams never close, so every request hung indefinitely.
+2. **Browser `fetch` API**: Good for streaming SSE natively, bad because Obsidian's Electron renderer enforces CORS — `app://obsidian.md` origin is rejected by the local zotero-mcp server.
+3. **Node.js `http` module**: Good for both — runs outside the browser sandbox (no CORS) and gives full control over SSE streams. Slight risk if Obsidian ever sandboxes Node modules more aggressively.
+4. **MCP TypeScript SDK**: Good for full protocol support and future upgrades, bad because it depends on Node.js `http`/`https` modules that Obsidian's renderer doesn't expose.
 
 ### Why We Chose This
-- MCP over streamable-http is just JSON-RPC POSTs — simple enough to implement in ~120 lines
-- `requestUrl` is Obsidian's built-in HTTP that bypasses CORS restrictions
+- Both `requestUrl` and `fetch` were tried and failed in sequence (see options above); Node.js `http` was the only path that handled both CORS and SSE correctly
+- MCP over streamable-http is just JSON-RPC POSTs — simple enough to implement in ~150 lines without a framework
 - No external dependencies to manage or break
 
 ### What Could Change
-If the MCP SDK adds browser/Electron support, switching to it would give us automatic protocol upgrades and better error handling.
+If the MCP SDK adds Electron/browser support, switching would give us automatic protocol upgrades and better error handling. If Obsidian tightens its Node.js sandbox, we'd need to revisit — the most likely fallback would be a companion native app that proxies requests.
 
 ---
 
@@ -83,3 +85,41 @@ The plugin spawns zotero-mcp with `--transport streamable-http`. Claude Desktop 
 
 ### Implication
 Bugs in zotero-mcp's HTTP transport path are unlikely to be caught or fixed by the upstream maintainer. We should treat zotero-mcp as a dependency we may need to patch or fork.
+
+---
+
+## Decision: Server survives plugin reloads (`stop()` does not kill the process) — *2026-02-25*
+
+### Why This Matters
+Obsidian's "reload app without saving" is a soft renderer reload — child processes spawned by the plugin survive it. If `stop()` kills the server, every reload forces a 30–60 second cold start while ChromaDB reloads.
+
+### Options We Considered
+1. **Kill on stop, respawn on start**: Simple lifecycle, predictable, but forces a cold start on every reload or plugin toggle — painful during development and for users who reload Obsidian often.
+2. **Keep server alive, reattach on start**: `stop()` drops the process reference without sending SIGTERM; `start()` calls `tryReuseExistingServer()` to detect and reuse a warm server. Near-instant reconnection after reloads.
+
+### Why We Chose This
+- Cold-start latency (30–60s) is the biggest UX pain point during development; eliminating it makes iteration much faster
+- The server process is cheap to leave running — it's idle when not handling requests
+- `tryReuseExistingServer()` falls back to a fresh spawn if the warm server is gone or unresponsive
+
+### What Could Change
+If users report confusion about the server running after they "disabled" the plugin, we'd add a setting to control this. The current tradeoff favors developer UX; power users who want a clean stop can restart Obsidian.
+
+---
+
+## Decision: Attached notes are passed to the LLM only, not to semantic search — *2026-02-25*
+
+### Why This Matters
+The orchestrator pipeline has two distinct consumers of user input: the MCP server (semantic search) and the LLM (answer generation). These need different inputs.
+
+### Options We Considered
+1. **Prepend note content to the search query**: Simple, single pipeline input — but passing a 17K-character note as a vector search query produces irrelevant results and caused HTTP 500 errors from the MCP server.
+2. **Pass raw question to search, note as separate LLM context**: Search gets a clean query; the LLM gets both the question and the note content as separate inputs assembled in `buildMessages()`.
+
+### Why We Chose This
+- Semantic search works best on short, focused queries — the user's question, not their notes
+- Notes are context for interpretation and synthesis, which is the LLM's job, not the search index's
+- Separating the inputs also prevents notes from bloating the MCP request
+
+### What Could Change
+If users want to search their notes alongside Zotero (e.g., "find papers related to what I'm writing"), we could add a separate note-aware search step, but that's a distinct feature from passing notes as LLM context.

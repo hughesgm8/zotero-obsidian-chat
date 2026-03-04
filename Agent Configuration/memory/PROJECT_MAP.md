@@ -7,8 +7,8 @@ Maintain a system map the user can understand. The project's status is updated r
 - Full plugin scaffolding (manifest, package.json, tsconfig, esbuild)
 - TypeScript compiles with zero errors, `npm run build` produces `main.js`
 - Settings tab with conditional provider fields (re-renders on dropdown change)
-- MCP server manager: auto-spawn, warm-server reuse across reloads (`tryReuseExistingServer`), `stop()` keeps server alive
-- MCP client (JSON-RPC 2.0 over HTTP with SSE support via Node `http` module)
+- MCP server manager: auto-spawn, warm-server reuse across reloads (`tryReuseExistingServer`), `stop()` keeps server alive; crash detection via `onUnexpectedExit` callback turns status dot red and shows a 10-second notice
+- MCP client (JSON-RPC 2.0 over HTTP with SSE support via Node `http` module — `requestUrl` and `fetch` were tried first and failed; see ARCHITECTURAL_DECISIONS.md)
 - LLM provider abstraction (Ollama, OpenRouter, Anthropic)
 - Deterministic query orchestrator (search → metadata → full text → LLM)
 - Sidebar chat view with markdown rendering, citations, copy button
@@ -16,6 +16,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - Attach active note as context (@ button → fuzzy note picker modal → chip UI; note passed separately to LLM, not to semantic search; full note content sent, no truncation; multi-note support)
 - Sources citations: correctly parses markdown format returned by `zotero_get_item_metadata`
 - UI layout: `ResizeObserver` in `onOpen()` fires `workspace.trigger("resize")` as soon as panel gets real dimensions (no more squash on cold open)
+- GitHub Actions auto-release: every push to `main` builds and publishes a GitHub release with compiled assets, enabling BRAT installation for beta testers
 - Tested end-to-end in a real Obsidian vault (confirmed working)
 
 ## 📋 Planned
@@ -28,6 +29,8 @@ Maintain a system map the user can understand. The project's status is updated r
 
 ## ✅ Recently Shipped
 - **Smart Import** (2026-02-26): Command palette → "Import paper from Zotero with AI summary" → search modal → pick paper → LLM generates Summary, Takeaways, Questions for Active Engagement, Relevance → note saved to configurable folder with `ai-imported` tag. New settings: import folder, research interests. Files: `src/paper-importer.ts`, `src/import-modal.ts`.
+- **Multi-note @ picker** (2026-02-25): Replaced paperclip button with `@` button → `FuzzySuggestModal` note picker → multiple notes attached as removable pills. Notes are passed separately to the LLM, not to semantic search (see ARCHITECTURAL_DECISIONS.md).
+- **Server reuse across reloads** (2026-02-25): `stop()` no longer kills the zotero-mcp process; `tryReuseExistingServer()` detects and reattaches to a warm server on reload, making plugin toggle and "reload app" near-instant after first cold start.
 
 ## ⚠️ Known Issues
 - **zotero-mcp ChromaDB bug**: `chroma_client.py` line 194 uses `create_collection()` instead of `get_or_create_collection()`. When Claude Desktop's zotero-mcp processes are running simultaneously, they share `~/.config/zotero-mcp/chroma_db` and the plugin's instance fails with "Collection [zotero_library] already exists". **Workaround applied**: edited installed package at `/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/zotero_mcp/chroma_client.py` line 194. This will be overwritten by `pip upgrade`. Gabriel is considering forking zotero-mcp long-term.

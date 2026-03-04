@@ -5,7 +5,7 @@ This file contains a template to be used when updating ARCHITECTURAL_DECISIONS.m
 # Template
 
 ```markdown
-## Decision: [Simple description]
+## Decision: [Simple description] — *YYYY-MM-DD*
 
 ### Why This Matters
 [User benefit in plain language]
