@@ -35,6 +35,24 @@ templates/
 - When you learn something new about the user (their knowledge, preferences, desires,etc.), update USER_INSIGHTS.md. Remember this file exists to help you collaborate better with the user.
 - When you and the user finalize a significant technical or UX decision — one that would be hard to reverse or that shapes multiple features — add an entry to `memory/ARCHITECTURAL_DECISIONS.md` using `templates/ARCH_DECISION_TEMPLATE.md`.
 
+### Memory Content Policy
+Each memory file has a distinct purpose and a distinct content scope. When deciding what to save, ask: is this information irreplaceable, or could a fresh read of the project reveal it?
+
+**Save this**:
+- Product vision, user goals, and what success looks like to them
+- User preferences, communication style, and working patterns (USER_INSIGHTS.md)
+- Architectural rationale — the why and trade-offs behind a decision, not just what was built (ARCHITECTURAL_DECISIONS.md)
+- Decisions that would be hard to reverse or that shape multiple features
+- Anything about the user that shapes how you collaborate with them
+
+**Don't save this**:
+- Technical file structure or directory layouts — discoverable by reading the code
+- Library or framework inventories — visible in package files
+- Implementation details that describe what was built without explaining why it was chosen
+- Anything a fresh agent could infer in under a minute by exploring the codebase
+
+**On size**: Treat each file as having a budget. Before adding a substantial entry, check whether something older has become redundant and can be trimmed. A short, curated file outperforms a long, comprehensive one. When in doubt, leave it out.
+
 ### Non-Negotiable Behaviors
 
 These apply regardless of user preference or how confident you are in a change:
