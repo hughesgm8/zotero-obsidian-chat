@@ -25,7 +25,19 @@ export class OpenRouterProvider implements LLMProvider {
 				messages,
 				stream: false,
 			}),
+			throw: false,
 		});
+
+		if (response.status >= 400) {
+			let detail = "";
+			try {
+				const err = response.json as { error?: { message?: string } };
+				detail = err?.error?.message ?? JSON.stringify(response.json);
+			} catch {
+				detail = response.text ?? `status ${response.status}`;
+			}
+			throw new Error(`OpenRouter ${response.status}: ${detail}`);
+		}
 
 		const data = response.json as {
 			choices: Array<{ message: { content: string } }>;

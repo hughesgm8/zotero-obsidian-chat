@@ -59,7 +59,7 @@ export class PaperImporter {
 				{ item_key: source.key }
 			);
 			if (rawText) {
-				fullText = rawText.slice(0, 100000);
+				fullText = rawText.slice(0, 40000);
 			}
 		} catch (err) {
 			console.warn("No full text available, proceeding with abstract only:", err);
