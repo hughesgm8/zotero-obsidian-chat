@@ -12,6 +12,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - LLM provider abstraction (Ollama, OpenRouter, Anthropic)
 - Deterministic query orchestrator (search → metadata → full text → LLM)
 - Sidebar chat view with markdown rendering, citations, copy button (copies full response including sources; user messages are text-selectable)
+- Redesigned input area: unified rounded box with pills, textarea, and `@` / Send toolbar inside; action buttons in a controls bar above the input; header shows title + "Connected/Disconnected/Thinking…" status
 - Save conversation to vault (floppy disk button → `Zotero Chats/YYYY-MM-DD/` folder)
 - Attach active note as context (@ button → fuzzy note picker modal → chip UI; note passed separately to LLM, not to semantic search; full note content sent, no truncation; multi-note support)
 - Sources citations: correctly parses markdown format returned by `zotero_get_item_metadata`
@@ -23,7 +24,7 @@ Maintain a system map the user can understand. The project's status is updated r
 - "Test Connection" buttons in settings for MCP and LLM
 - "Smart mode" for capable models that can call MCP tools themselves
 - Model switching directly in the sidebar UI (currently settings-only)
-- **Move new chat + save buttons** from top-right header to just above the input area (Gabriel's preference)
+- **UI polish pass**: revisit look and feel to more closely match Copilot (typography, spacing, message bubble style, overall visual consistency) — current layout is structurally correct but visual details need refinement
 - Chat history: browse and reload saved conversations (design TBD)
 - Chat settings panel in sidebar (future, low priority)
 - More detailed and adaptive context on user's research interests to expand the "Relevance" section of paper imports
