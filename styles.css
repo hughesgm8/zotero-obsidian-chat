@@ -19,10 +19,15 @@
 	flex-shrink: 0;
 }
 
+.zotero-chat-title {
+	font-weight: 600;
+	font-size: var(--font-ui-small);
+}
+
 .zotero-chat-status-wrapper {
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 6px;
 }
 
 .zotero-chat-status-dot {
@@ -46,22 +51,28 @@
 }
 
 .zotero-chat-status-text {
-	font-weight: 600;
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
 }
 
-.zotero-chat-header-actions {
+/* Controls bar */
+.zotero-chat-controls-bar {
 	display: flex;
+	justify-content: flex-end;
 	align-items: center;
-	gap: 4px;
+	gap: 2px;
+	padding: 2px 8px;
+	flex-shrink: 0;
 }
 
-.zotero-chat-save-btn {
+.zotero-chat-save-btn,
+.zotero-chat-new-btn {
 	color: var(--text-muted);
 }
 
-.zotero-chat-clear-btn {
-	color: var(--text-muted);
+.zotero-chat-save-btn:hover,
+.zotero-chat-new-btn:hover {
+	color: var(--text-normal);
 }
 
 /* Messages */
@@ -162,40 +173,37 @@
 
 /* Input area */
 .zotero-chat-input-area {
+	padding: 0 12px 12px;
+	flex-shrink: 0;
+}
+
+/* Unified input box */
+.zotero-chat-input-box {
 	display: flex;
 	flex-direction: column;
-	padding: 12px;
-	border-top: 1px solid var(--background-modifier-border);
-	flex-shrink: 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background-color: var(--background-primary);
+	overflow: hidden;
 }
 
-.zotero-chat-input-row {
+.zotero-chat-input-box:focus-within {
+	border-color: var(--interactive-accent);
+}
+
+/* Pills row inside the box */
+.zotero-chat-pills-row {
 	display: flex;
-	gap: 8px;
-	align-items: flex-end;
-}
-
-/* Paperclip / attach button */
-.zotero-chat-paperclip-btn {
-	color: var(--text-muted);
-	flex-shrink: 0;
-}
-
-.zotero-chat-paperclip-btn:hover {
-	color: var(--text-normal);
-}
-
-/* Attachment chip */
-.zotero-chat-attachment-chip-area {
-	align-items: center;
-	padding-bottom: 6px;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 10px 0;
 }
 
 .zotero-chat-attachment-chip {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
-	padding: 2px 8px 2px 6px;
+	padding: 2px 6px 2px 8px;
 	border-radius: 12px;
 	background-color: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
@@ -213,27 +221,33 @@
 	color: var(--text-normal);
 }
 
+/* Textarea inside the box */
 .zotero-chat-input {
-	flex: 1;
 	resize: none;
 	min-height: 36px;
 	max-height: 120px;
-	padding: 8px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	background-color: var(--background-primary);
+	padding: 8px 10px;
+	border: none;
+	background: transparent;
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
 	font-family: var(--font-interface);
-}
-
-.zotero-chat-input:focus {
-	border-color: var(--interactive-accent);
 	outline: none;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .zotero-chat-input:disabled {
 	opacity: 0.6;
+}
+
+/* Toolbar row at the bottom of the input box */
+.zotero-chat-input-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 6px;
+	border-top: 1px solid var(--background-modifier-border);
 }
 
 .zotero-chat-send-btn {

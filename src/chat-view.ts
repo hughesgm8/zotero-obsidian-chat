@@ -43,6 +43,7 @@ export class ZoteroChatView extends ItemView {
 	private inputEl!: HTMLTextAreaElement;
 	private sendBtnEl!: HTMLButtonElement;
 	private statusEl!: HTMLElement;
+	private statusTextEl!: HTMLElement;
 	private isLoading = false;
 	private attachedNotes: Array<{ name: string; path: string; content: string }> = [];
 	private attachmentChipEl!: HTMLElement;
@@ -70,77 +71,45 @@ export class ZoteroChatView extends ItemView {
 		container.empty();
 		container.addClass("zotero-chat-container");
 
-		// Header with status and action buttons
+		// Header — title left, status right
 		const header = container.createDiv({ cls: "zotero-chat-header" });
+		header.createSpan({ text: "Zotero Chat", cls: "zotero-chat-title" });
+		const statusWrapper = header.createDiv({ cls: "zotero-chat-status-wrapper" });
+		this.statusEl = statusWrapper.createSpan({ cls: "zotero-chat-status-dot" });
+		this.statusTextEl = statusWrapper.createSpan({ cls: "zotero-chat-status-text" });
 
-		const statusWrapper = header.createDiv({
-			cls: "zotero-chat-status-wrapper",
-		});
-		this.statusEl = statusWrapper.createSpan({
-			cls: "zotero-chat-status-dot",
-		});
-		statusWrapper.createSpan({
-			text: "Zotero Chat",
-			cls: "zotero-chat-status-text",
-		});
+		// Message list
+		this.messageListEl = container.createDiv({ cls: "zotero-chat-messages" });
 
-		const headerActions = header.createDiv({
-			cls: "zotero-chat-header-actions",
-		});
+		// Welcome message
+		this.renderWelcome();
 
-		const newChatBtn = headerActions.createEl("button", {
+		// Controls bar — between messages and input
+		const controlsBar = container.createDiv({ cls: "zotero-chat-controls-bar" });
+		const newChatBtn = controlsBar.createEl("button", {
 			cls: "zotero-chat-new-btn clickable-icon",
 			attr: { "aria-label": "New chat" },
 		});
 		setIcon(newChatBtn, "square-pen");
 		newChatBtn.addEventListener("click", () => this.clearChat());
-
-		const saveBtn = headerActions.createEl("button", {
+		const saveBtn = controlsBar.createEl("button", {
 			cls: "zotero-chat-save-btn clickable-icon",
 			attr: { "aria-label": "Save conversation" },
 		});
 		setIcon(saveBtn, "file-output");
 		saveBtn.addEventListener("click", () => this.saveConversation());
 
-		// Message list
-		this.messageListEl = container.createDiv({
-			cls: "zotero-chat-messages",
-		});
+		// Input area — unified box containing pills, textarea, and toolbar
+		const inputArea = container.createDiv({ cls: "zotero-chat-input-area" });
+		const inputBox = inputArea.createDiv({ cls: "zotero-chat-input-box" });
 
-		// Welcome message
-		this.renderWelcome();
-
-		// Input area
-		const inputArea = container.createDiv({
-			cls: "zotero-chat-input-area",
-		});
-
-		this.attachmentChipEl = inputArea.createDiv({
-			cls: "zotero-chat-attachment-chip-area",
-		});
+		this.attachmentChipEl = inputBox.createDiv({ cls: "zotero-chat-pills-row" });
 		this.attachmentChipEl.style.display = "none";
 
-		const inputRow = inputArea.createDiv({
-			cls: "zotero-chat-input-row",
-		});
-
-		const atBtn = inputRow.createEl("button", {
-			cls: "zotero-chat-at-btn clickable-icon",
-			attr: { "aria-label": "Attach a note" },
-		});
-		setIcon(atBtn, "at-sign");
-		atBtn.addEventListener("click", () => {
-			new NotePicker(this.app, (file) => this.attachNote(file)).open();
-		});
-
-		this.inputEl = inputRow.createEl("textarea", {
+		this.inputEl = inputBox.createEl("textarea", {
 			cls: "zotero-chat-input",
-			attr: {
-				placeholder: "Ask about your Zotero library...",
-				rows: "2",
-			},
+			attr: { placeholder: "Ask about your Zotero library...", rows: "2" },
 		});
-
 		this.inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
 			if (e.key === "Enter" && !e.shiftKey) {
 				e.preventDefault();
@@ -148,7 +117,16 @@ export class ZoteroChatView extends ItemView {
 			}
 		});
 
-		this.sendBtnEl = inputRow.createEl("button", {
+		const inputToolbar = inputBox.createDiv({ cls: "zotero-chat-input-toolbar" });
+		const atBtn = inputToolbar.createEl("button", {
+			cls: "zotero-chat-at-btn clickable-icon",
+			attr: { "aria-label": "Attach a note" },
+		});
+		setIcon(atBtn, "at-sign");
+		atBtn.addEventListener("click", () => {
+			new NotePicker(this.app, (file) => this.attachNote(file)).open();
+		});
+		this.sendBtnEl = inputToolbar.createEl("button", {
 			cls: "zotero-chat-send-btn",
 			text: "Send",
 		});
@@ -344,19 +322,17 @@ export class ZoteroChatView extends ItemView {
 	updateStatus(): void {
 		if (!this.statusEl) return;
 
-		const mcpRunning = this.plugin.isMCPRunning();
-		this.statusEl.removeClass(
-			"status-green",
-			"status-yellow",
-			"status-red"
-		);
+		this.statusEl.removeClass("status-green", "status-yellow", "status-red");
 
 		if (this.isLoading) {
 			this.statusEl.addClass("status-yellow");
-		} else if (mcpRunning) {
+			this.statusTextEl?.setText("Thinking…");
+		} else if (this.plugin.isMCPRunning()) {
 			this.statusEl.addClass("status-green");
+			this.statusTextEl?.setText("Connected");
 		} else {
 			this.statusEl.addClass("status-red");
+			this.statusTextEl?.setText("Disconnected");
 		}
 	}
 
