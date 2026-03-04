@@ -296,7 +296,14 @@ export class ZoteroChatView extends ItemView {
 			});
 			setIcon(copyBtn, "copy");
 			copyBtn.addEventListener("click", () => {
-				navigator.clipboard.writeText(msg.content);
+				let text = msg.content;
+				if (msg.sources && msg.sources.length > 0) {
+					text += "\n\n**Sources:**\n";
+					for (const src of msg.sources) {
+						text += `- ${src.title} — ${src.authors || "Unknown"} (${src.year})\n`;
+					}
+				}
+				navigator.clipboard.writeText(text);
 				new Notice("Copied to clipboard");
 			});
 		} else {

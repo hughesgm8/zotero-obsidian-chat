@@ -105,6 +105,8 @@
 .zotero-chat-message-content {
 	word-wrap: break-word;
 	overflow-wrap: break-word;
+	user-select: text;
+	cursor: text;
 }
 
 .zotero-chat-message-content p:first-child {
