@@ -205,6 +205,21 @@ This happens when using a cloud-hosted model through Ollama without being logged
 **"Error updating database" on startup**
 You may see a Zotero API error in the terminal when zotero-mcp starts. This is non-fatal — the server still runs and your existing paper database is unaffected. It just means the automatic refresh on startup failed. Run `zotero-mcp update-db --fulltext` manually in Terminal if you want to re-index.
 
+**Wrong Python version being used for zotero-mcp**
+To check which Python version pipx used when installing zotero-mcp, run:
+```
+pipx list
+```
+Look for the `zotero-mcp-server` entry — it will show the Python version alongside it. If it shows 3.14 or an unexpected version, force a reinstall with the correct version (replacing `3.12` with your version from step 2b):
+```
+pipx install zotero-mcp-server --python python3.12 --force
+```
+If `python3.12` is not recognised as a command, use the full path instead. For a Homebrew install this is typically:
+```
+pipx install zotero-mcp-server --python /opt/homebrew/opt/python@3.12/bin/python3.12 --force
+```
+After reinstalling, re-run `zotero-mcp setup` and `zotero-mcp update-db --fulltext`.
+
 **The model doesn't seem to know about my papers**
 Make sure you completed Step 2e. If you've added papers to Zotero recently, open Terminal and run `zotero-mcp update-db --fulltext` to re-index.
 
@@ -212,9 +227,9 @@ Make sure you completed Step 2e. If you've added papers to Zotero recently, open
 
 ## Privacy
 
-When using Ollama, everything stays on your computer. Your questions, your papers, and the AI model itself never leave your machine.
+When using Ollama with a local model, everything stays on your computer. Your questions, your papers, and the AI model itself never leave your machine.
 
-When using OpenRouter or Claude, your questions and relevant paper excerpts are sent to those services. Check their privacy policies if this matters for your research.
+When using Ollama with a cloud-hosted model (such as `deepseek-v3.1:671b-cloud`), your questions and relevant paper excerpts are sent to the model provider's servers. When using OpenRouter or Claude, the same applies. Check the relevant provider's privacy policy if this matters for your research.
 
 ---
 
