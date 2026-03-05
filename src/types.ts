@@ -1,5 +1,29 @@
 export type LLMProviderType = "ollama" | "openrouter" | "anthropic";
 
+export interface SummarySection {
+	name: string;
+	instructions: string;
+}
+
+export const DEFAULT_SUMMARY_SECTIONS: SummarySection[] = [
+	{
+		name: "Summary",
+		instructions: "2-3 paragraphs covering the paper's main argument, methodology, and findings.",
+	},
+	{
+		name: "Interesting Takeaways",
+		instructions: "Bullet points of the most notable insights.",
+	},
+	{
+		name: "Questions for Active Engagement",
+		instructions: "Generate 4-5 questions specific to named elements of this paper — a particular method, finding, claim, or dataset. Focus on how this paper's methods, findings, or framing might apply to, complicate, or inform the researcher's work. Include 1-2 questions about open questions or gaps the paper raises.",
+	},
+	{
+		name: "Relevance",
+		instructions: "How this paper relates to the researcher's focus described in the 'Your research interests' setting. If no research focus is provided, note that and keep this section brief.",
+	},
+];
+
 export interface ZoteroMCPSettings {
 	// MCP Server
 	mcpExecutablePath: string;
@@ -32,6 +56,7 @@ export interface ZoteroMCPSettings {
 	// Smart Import
 	importFolder: string;
 	researchDescription: string;
+	summarySections: SummarySection[];
 }
 
 export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
@@ -62,6 +87,7 @@ export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
 
 	importFolder: "Zotero Notes",
 	researchDescription: "",
+	summarySections: DEFAULT_SUMMARY_SECTIONS.map(s => ({ ...s })),
 };
 
 export interface ChatMessage {

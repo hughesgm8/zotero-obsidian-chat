@@ -272,6 +272,61 @@
 }
 
 /* ========================================
+   Summary Sections Settings
+   ======================================== */
+
+.zotero-summary-sections {
+	margin-bottom: 12px;
+}
+
+.zotero-summary-section-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 8px;
+	background-color: var(--background-secondary);
+}
+
+.zotero-summary-section-name-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.zotero-summary-section-name-row input {
+	flex: 1;
+	font-weight: 600;
+}
+
+.zotero-summary-section-label {
+	display: block;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin-bottom: 4px;
+}
+
+.zotero-summary-section-textarea {
+	width: 100%;
+	box-sizing: border-box;
+	resize: vertical;
+	min-height: 60px;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 6px 8px;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zotero-summary-section-actions {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+
+/* ========================================
    Smart Import Modal
    ======================================== */
 
