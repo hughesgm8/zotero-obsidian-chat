@@ -41,6 +41,8 @@ Ollama lets you run AI models privately on your own Mac. No account required, no
    ```
 
    > **Not sure which model to pick?** `llama3.2` is a good default. If your Mac has less than 16 GB of memory, use `llama3.2:3b` instead (smaller and faster). If you have an M2/M3 Mac with 32 GB+, try `mistral` for better results.
+   >
+   > **Have 8 GB of memory or less?** Local models may be too slow or unreliable on machines with limited RAM. Ollama also supports cloud-hosted models, which run on remote servers instead of your computer. A good option is `deepseek-v3.1:671b-cloud` — pull it the same way: `ollama pull deepseek-v3.1:671b-cloud`. You will need to be logged into Ollama for cloud models to work. Alternatively, if you have an [OpenRouter](https://openrouter.ai) API key, you can skip Ollama entirely and select OpenRouter as your provider in Step 4.
 
 5. Wait for the download to finish (this can take several minutes)
 
@@ -72,6 +74,8 @@ zotero-mcp is the bridge between your Zotero library and the plugin. It reads yo
 
    If you see an error, a version below 3.10, or 3.14+, install Python 3.12 from [python.org/downloads](https://www.python.org/downloads/) and install it like any Mac app, then repeat this step.
 
+   **Make a note of your major version number** (e.g. `3.12` or `3.11`) — you'll need it in the next step.
+
 ### 2c. Install zotero-mcp
 
 The recommended way to install zotero-mcp is via **pipx**, which handles the installation cleanly and makes the `zotero-mcp` command available without PATH issues. **Note**: If you've never installed anything with [Homebrew](https://brew.sh) (a package manager), install it first using the following command: 
@@ -80,11 +84,11 @@ The recommended way to install zotero-mcp is via **pipx**, which handles the ins
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Then, in Terminal, paste these commands one at a time and press Enter after each:
+Then, in Terminal, paste these commands one at a time and press Enter after each — replacing `3.12` in the second command with your own version number from step 2b:
 
 ```
 brew install pipx
-pipx install zotero-mcp-server
+pipx install zotero-mcp-server --python python3.12
 pipx ensurepath
 ```
 
@@ -158,8 +162,9 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
    - Copy the result and paste it into the setting
    - **Important:** the path must be absolute — if the result starts with `~`, expand it manually (e.g. `~` becomes `/Users/yourname`)
 3. Under **AI Provider**, select **Ollama**
-4. The **Model** field should say `llama3.2` (or whatever model you downloaded in Step 1)
-5. Click the **X** to close Settings
+4. Make sure the **Ollama URL** field is set to `http://localhost:11434` — this is the default and should already be correct
+5. The **Model** field should say `llama3.2` (or whatever model you downloaded in Step 1)
+6. Click the **X** to close Settings
 
 > **Using OpenRouter or Claude instead?** If you have an API key for [OpenRouter](https://openrouter.ai) or [Anthropic](https://anthropic.com), you can select those providers and enter your key. OpenRouter gives access to many models including free ones. This is optional — Ollama works great for most purposes.
 
@@ -193,6 +198,12 @@ This is normal with local models. Larger models are slower. Try `llama3.2:3b` fo
 
 **"Collection already exists" error**
 This can happen if you also use zotero-mcp with Claude Desktop at the same time. See the [zotero-mcp issue tracker](https://github.com/54yyyu/zotero-mcp/issues) for the latest fix.
+
+**"Ollama 401: unauthorized" error**
+This happens when using a cloud-hosted model through Ollama without being logged in. Open the Ollama app and make sure you are signed into your account, then try again.
+
+**"Error updating database" on startup**
+You may see a Zotero API error in the terminal when zotero-mcp starts. This is non-fatal — the server still runs and your existing paper database is unaffected. It just means the automatic refresh on startup failed. Run `zotero-mcp update-db --fulltext` manually in Terminal if you want to re-index.
 
 **The model doesn't seem to know about my papers**
 Make sure you completed Step 2e. If you've added papers to Zotero recently, open Terminal and run `zotero-mcp update-db --fulltext` to re-index.
