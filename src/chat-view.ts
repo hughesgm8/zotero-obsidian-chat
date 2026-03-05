@@ -63,7 +63,7 @@ export class ZoteroChatView extends ItemView {
 	}
 
 	getIcon(): string {
-		return "book-open";
+		return "zotero-chat";
 	}
 
 	async onOpen(): Promise<void> {

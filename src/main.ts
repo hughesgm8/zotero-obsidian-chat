@@ -1,4 +1,4 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, addIcon } from "obsidian";
 import type { Editor } from "obsidian";
 import type { ZoteroMCPSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./types";
@@ -22,13 +22,16 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 
 		await this.loadSettings();
 
+		// Register custom Z icon (Zotero branding)
+		addIcon("zotero-chat", `<line x1="22" y1="15" x2="78" y2="15" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><line x1="78" y1="15" x2="22" y2="85" stroke="currentColor" stroke-width="20" stroke-linecap="round"/><line x1="22" y1="85" x2="78" y2="85" stroke="currentColor" stroke-width="20" stroke-linecap="round"/>`);
+
 		// Register the chat view
 		this.registerView(VIEW_TYPE_ZOTERO_CHAT, (leaf) => {
 			return new ZoteroChatView(leaf, this);
 		});
 
 		// Ribbon icon
-		this.addRibbonIcon("book-open", "Open Zotero Chat", () => {
+		this.addRibbonIcon("zotero-chat", "Open Zotero Chat", () => {
 			this.activateChatView();
 		});
 
