@@ -182,7 +182,7 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
 
 ### The chat panel
 
-`[SCREENSHOT: full chat panel, showing header, empty chat area, and input row]`
+<img width="1439" height="900" alt="Screenshot 2026-03-06 at 10 08 04" src="https://github.com/user-attachments/assets/37309c1d-d166-4f90-bae3-e97800820aae" />
 
 The header shows:
 - A **status dot** — green means connected and ready, red means something went wrong
@@ -195,14 +195,14 @@ The header shows:
 
 Type your question in the input box at the bottom and press **Enter** to send (or **Shift+Enter** to add a new line).
 
-`[SCREENSHOT: input box with a question typed, before sending]`
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/0d07569d-43a2-413a-83b8-36c0de62f8bd" />
 
 The plugin will:
 1. Search your Zotero library for relevant papers
 2. Send the results and your question to your AI model
 3. Display the response with citations
 
-`[SCREENSHOT: a response with citations visible]`
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/62d7cafa-bf71-4a72-b54a-9ecf3f7700c3" />
 
 Each response includes a **Sources** section listing the papers the answer drew from. Click the **copy button** to copy the full response (including sources) as markdown — useful for pasting directly into a note.
 
@@ -216,13 +216,9 @@ You can give the AI extra context by attaching one of your Obsidian notes — us
 2. Start typing the name of any note in your vault
 3. Select the note from the list
 
-`[SCREENSHOT: fuzzy note picker modal open]`
+<img width="1439" height="900" alt="image" src="https://github.com/user-attachments/assets/3242a62a-dab0-4e79-b6e0-2b39c0f22d64" />
 
-The note appears as a chip above the input box. You can attach multiple notes, and remove any of them by clicking the **×** on its chip.
-
-`[SCREENSHOT: input area with one or two note chips attached]`
-
-The note content is sent to the AI alongside your question. It doesn't affect which papers are retrieved — it only influences how the AI interprets and responds to your question.
+The note appears as a chip above the input box. You can attach multiple notes, and remove any of them by clicking the **×** on its chip. The note content is sent to the AI alongside your question. It doesn't affect which papers are retrieved — it only influences how the AI interprets and responds to your question.
 
 ---
 
@@ -240,15 +236,15 @@ Open the **Command Palette** (`⌘P`) and run:
 
 > **Zotero MCP Chat: Import paper from Zotero with AI summary**
 
-`[SCREENSHOT: command palette with the command visible]`
+<img width="1440" height="900" alt="image" src="https://github.com/user-attachments/assets/5f87476a-692a-463f-a349-48da1e9365f2" />
 
 A search box will appear. Type the title or author of a paper — results from your Zotero library will appear as you type.
 
-`[SCREENSHOT: import search modal with results showing]`
+<img width="1438" height="899" alt="image" src="https://github.com/user-attachments/assets/68a86802-f378-470a-8858-d3942f7b14e4" />
 
 Click a result. The plugin will fetch the paper's full text and metadata, pass it to your AI model, and create a new note with structured sections: **Summary**, **Key Takeaways**, **Questions for Active Engagement**, and **Relevance** (or whatever sections you've configured in Settings).
 
-`[SCREENSHOT: the generated note in Obsidian, showing the sections]`
+<img width="1438" height="900" alt="image" src="https://github.com/user-attachments/assets/efe4657b-1fd1-4600-81a9-aee4dfd2c362" />
 
 ---
 
@@ -270,7 +266,7 @@ The plugin will ask you which paper to summarise, then insert the summary at you
 
 By default, Smart Import generates four sections (Summary, Key Takeaways, Questions for Active Engagement, Relevance). You can change these in **Settings → Zotero MCP Chat → Smart Import sections**.
 
-`[SCREENSHOT: settings panel showing the section list with add/delete/reorder buttons]`
+<img width="1437" height="900" alt="image" src="https://github.com/user-attachments/assets/416e0d6a-44c4-4037-81f6-a72a64482667" />
 
 For each section you can set:
 - **Name** — the heading that appears in the note
