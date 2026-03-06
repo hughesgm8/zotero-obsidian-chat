@@ -154,13 +154,14 @@ export class ImportModal extends Modal {
 			return;
 		}
 
-		new Notice(
-			`Importing "${source.title}"... This may take 20-30 seconds.`,
-			8000
+		const loadingNotice = new Notice(
+			`Importing "${source.title}"… This may take 20–30 seconds.`,
+			0
 		);
 
 		try {
 			const result = await this.importer.importPaper(source);
+			loadingNotice.hide();
 			new Notice(`Imported: ${result.title}`);
 
 			const file = this.app.vault.getAbstractFileByPath(result.filePath);
@@ -170,6 +171,7 @@ export class ImportModal extends Modal {
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			console.error("Import failed:", err);
+			loadingNotice.hide();
 			new Notice(`Import failed: ${msg}`, 10000);
 		}
 	}

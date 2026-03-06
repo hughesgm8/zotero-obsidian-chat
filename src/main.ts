@@ -89,13 +89,19 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 				new ImportModal(this.app, importer, {
 					title: "Insert AI summary into active note",
 					onSelect: async (source) => {
-						new Notice(
-							`Generating summary for "${source.title}"... This may take 20-30 seconds.`,
-							8000
+						const loadingNotice = new Notice(
+							`Generating summary for "${source.title}"… This may take 20–30 seconds.`,
+							0
 						);
-						const markdown = await importer.generateSummaryMarkdown(source);
-						editor.replaceSelection(markdown);
-						new Notice("Summary inserted.");
+						try {
+							const markdown = await importer.generateSummaryMarkdown(source);
+							editor.replaceSelection(markdown);
+							loadingNotice.hide();
+							new Notice("Summary inserted.");
+						} catch (err) {
+							loadingNotice.hide();
+							throw err;
+						}
 					},
 				}).open();
 			},
