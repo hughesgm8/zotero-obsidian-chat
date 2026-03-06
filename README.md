@@ -135,7 +135,7 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
 1. In Obsidian, open **Settings → Community plugins**
 2. Make sure "Restricted mode" is **off**
 3. Click **Browse** and search for "BRAT"
-4. Install **Obsidian42 - BRAT** and enable it
+4. Install **BRAT** and enable it
 
 ### 3b. Add this plugin via BRAT
 
