@@ -172,16 +172,113 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
 
 ## Step 5 — Start chatting
 
-1. Click the **book icon** in the left sidebar to open the chat panel
-2. Wait a moment for the status dot to turn **green** — this means the connection to your Zotero library is ready (it can take 10–30 seconds the first time)
-3. Type a question and press **Enter**
+1. Click the **Z icon** in the left sidebar to open the chat panel. If you don't see it, go to **View → Zotero MCP Chat**.
+2. Wait a moment for the status dot to turn **green** — this means the connection to your Zotero library is ready (it can take 10–30 seconds the first time).
+3. Type a question and press **Enter**.
 
-### Tips
+---
 
-- **Attach a note for context:** Click the **@** button to attach one of your Obsidian notes. The AI will use it as additional context for your question.
-- **Save a conversation:** Click the **export icon** at the top of the chat to save the conversation as a note in your vault.
-- **Start fresh:** Click the **pen icon** to clear the chat and start a new conversation.
-- **Shift+Enter** adds a new line without sending.
+## Using the plugin
+
+### The chat panel
+
+`[SCREENSHOT: full chat panel, showing header, empty chat area, and input row]`
+
+The header shows:
+- A **status dot** — green means connected and ready, red means something went wrong
+- A **new chat button** (✏️) — clears the current conversation
+- A **save button** (💾) — saves the conversation as a note in your vault
+
+---
+
+### Asking a question
+
+Type your question in the input box at the bottom and press **Enter** to send (or **Shift+Enter** to add a new line).
+
+`[SCREENSHOT: input box with a question typed, before sending]`
+
+The plugin will:
+1. Search your Zotero library for relevant papers
+2. Send the results and your question to your AI model
+3. Display the response with citations
+
+`[SCREENSHOT: a response with citations visible]`
+
+Each response includes a **Sources** section listing the papers the answer drew from. Click the **copy button** to copy the full response (including sources) as markdown — useful for pasting directly into a note.
+
+---
+
+### Attaching a note for context
+
+You can give the AI extra context by attaching one of your Obsidian notes — useful when you want answers tailored to a specific project, draft, or set of ideas.
+
+1. Click the **@ button** in the input row
+2. Start typing the name of any note in your vault
+3. Select the note from the list
+
+`[SCREENSHOT: fuzzy note picker modal open]`
+
+The note appears as a chip above the input box. You can attach multiple notes, and remove any of them by clicking the **×** on its chip.
+
+`[SCREENSHOT: input area with one or two note chips attached]`
+
+The note content is sent to the AI alongside your question. It doesn't affect which papers are retrieved — it only influences how the AI interprets and responds to your question.
+
+---
+
+### Saving a conversation
+
+Click the **save button** (💾) in the top-right of the panel. The conversation is saved as a markdown note in `Zotero Chats/YYYY-MM-DD/` in your vault.
+
+---
+
+### Smart Import — creating an AI summary of a paper
+
+Smart Import lets you pick a paper from your Zotero library and generate a structured summary note in Obsidian.
+
+Open the **Command Palette** (`⌘P`) and run:
+
+> **Zotero MCP Chat: Import paper from Zotero with AI summary**
+
+`[SCREENSHOT: command palette with the command visible]`
+
+A search box will appear. Type the title or author of a paper — results from your Zotero library will appear as you type.
+
+`[SCREENSHOT: import search modal with results showing]`
+
+Click a result. The plugin will fetch the paper's full text and metadata, pass it to your AI model, and create a new note with structured sections: **Summary**, **Key Takeaways**, **Questions for Active Engagement**, and **Relevance** (or whatever sections you've configured in Settings).
+
+`[SCREENSHOT: the generated note in Obsidian, showing the sections]`
+
+---
+
+### Smart Import — enriching an existing note
+
+If you already have a note (for example, one created by the [Zotero Integration](https://github.com/mgmeyers/obsidian-zotero-integration) plugin), you can add an AI summary to it without creating a new file.
+
+1. Open the note you want to enrich
+2. Place your cursor where you want the summary to be inserted
+3. Open the Command Palette (`⌘P`) and run:
+
+> **Zotero MCP Chat: Insert AI summary into active note**
+
+The plugin will ask you which paper to summarise, then insert the summary at your cursor position.
+
+---
+
+### Customising summary sections
+
+By default, Smart Import generates four sections (Summary, Key Takeaways, Questions for Active Engagement, Relevance). You can change these in **Settings → Zotero MCP Chat → Smart Import sections**.
+
+`[SCREENSHOT: settings panel showing the section list with add/delete/reorder buttons]`
+
+For each section you can set:
+- **Name** — the heading that appears in the note
+- **Instructions** — what the AI should write for that section
+
+You can add new sections, delete ones you don't want, and reorder them with the ↑/↓ buttons.
+
+> **Make the most of the Relevance section:** The **Relevance** section is where the AI explains how each paper connects to your own research. It works best when you tell it what you're working on — go to **Settings → Zotero MCP Chat → Your research interests** and write a short description of your research focus (a sentence or two is enough). For example: *"I study the effects of social media on adolescent mental health."* The AI will use this to personalise the Relevance section for every paper you import.
 
 ---
 
