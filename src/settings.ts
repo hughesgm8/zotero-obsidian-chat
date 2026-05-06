@@ -67,6 +67,8 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) =>
 				dropdown
 					.addOption("ollama", "Ollama (Local, free)")
+					.addOption("github-models", "GitHub Models (free, DeepSeek & others)")
+					.addOption("gemini", "Gemini (Google AI, large context)")
 					.addOption("openrouter", "OpenRouter (cloud, many models)")
 					.addOption("anthropic", "Anthropic (Claude)")
 					.setValue(this.plugin.settings.llmProvider)
@@ -92,6 +94,74 @@ export class ZoteroMCPSettingTab extends PluginSettingTab {
 						.setValue(this.plugin.settings.ollamaModel)
 						.onChange(async (value) => {
 							this.plugin.settings.ollamaModel = value;
+							await this.plugin.saveSettings();
+						})
+				);
+		}
+
+		if (provider === "github-models") {
+			new Setting(containerEl)
+				.setName("GitHub personal access token")
+				.setDesc(
+					"Your GitHub personal access token with Models access. Get one at github.com/settings/tokens."
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder("github_pat_...")
+						.setValue(this.plugin.settings.githubModelsApiKey)
+						.onChange(async (value) => {
+							this.plugin.settings.githubModelsApiKey = value;
+							await this.plugin.saveSettings();
+						})
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					.then((t) => ((t.inputEl as any).type = "password"))
+				);
+
+			new Setting(containerEl)
+				.setName("Model")
+				.setDesc(
+					"Which model to use. See github.com/marketplace/models for the full list."
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder("deepseek/DeepSeek-V3-0324")
+						.setValue(this.plugin.settings.githubModelsModel)
+						.onChange(async (value) => {
+							this.plugin.settings.githubModelsModel = value;
+							await this.plugin.saveSettings();
+						})
+				);
+		}
+
+		if (provider === "gemini") {
+			new Setting(containerEl)
+				.setName("Gemini API key")
+				.setDesc(
+					"Your Google AI Studio API key. Get one at aistudio.google.com."
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder("AIza...")
+						.setValue(this.plugin.settings.geminiApiKey)
+						.onChange(async (value) => {
+							this.plugin.settings.geminiApiKey = value;
+							await this.plugin.saveSettings();
+						})
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					.then((t) => ((t.inputEl as any).type = "password"))
+				);
+
+			new Setting(containerEl)
+				.setName("Model")
+				.setDesc(
+					"Which Gemini model to use. gemini-2.0-flash is free with a 1M token context window."
+				)
+				.addText((text) =>
+					text
+						.setPlaceholder("gemini-2.0-flash")
+						.setValue(this.plugin.settings.geminiModel)
+						.onChange(async (value) => {
+							this.plugin.settings.geminiModel = value;
 							await this.plugin.saveSettings();
 						})
 				);

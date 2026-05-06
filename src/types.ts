@@ -1,4 +1,4 @@
-export type LLMProviderType = "ollama" | "openrouter" | "anthropic";
+export type LLMProviderType = "ollama" | "openrouter" | "anthropic" | "github-models" | "gemini";
 
 export interface SummarySection {
 	name: string;
@@ -49,6 +49,14 @@ export interface ZoteroMCPSettings {
 	anthropicApiKey: string;
 	anthropicModel: string;
 
+	// GitHub Models
+	githubModelsApiKey: string;
+	githubModelsModel: string;
+
+	// Gemini
+	geminiApiKey: string;
+	geminiModel: string;
+
 	// Behavior
 	maxConversationHistory: number;
 	systemPrompt: string;
@@ -78,6 +86,12 @@ export const DEFAULT_SETTINGS: ZoteroMCPSettings = {
 
 	anthropicApiKey: "",
 	anthropicModel: "claude-sonnet-4-5-20250929",
+
+	githubModelsApiKey: "",
+	githubModelsModel: "deepseek/DeepSeek-V3-0324",
+
+	geminiApiKey: "",
+	geminiModel: "gemini-2.0-flash",
 
 	maxConversationHistory: 6,
 	fullTextTopN: 3,

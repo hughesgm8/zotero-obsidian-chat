@@ -3,6 +3,8 @@ import type { LLMProvider } from "./llm-provider";
 import { OllamaProvider } from "./ollama";
 import { OpenRouterProvider } from "./openrouter";
 import { AnthropicProvider } from "./anthropic";
+import { GitHubModelsProvider } from "./github-models";
+import { GeminiProvider } from "./gemini";
 
 export function createLLMProvider(settings: ZoteroMCPSettings): LLMProvider {
 	switch (settings.llmProvider) {
@@ -20,6 +22,16 @@ export function createLLMProvider(settings: ZoteroMCPSettings): LLMProvider {
 			return new AnthropicProvider(
 				settings.anthropicApiKey,
 				settings.anthropicModel
+			);
+		case "github-models":
+			return new GitHubModelsProvider(
+				settings.githubModelsApiKey,
+				settings.githubModelsModel
+			);
+		case "gemini":
+			return new GeminiProvider(
+				settings.geminiApiKey,
+				settings.geminiModel
 			);
 		default:
 			throw new Error(
