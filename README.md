@@ -1,50 +1,86 @@
 # Zotero MCP Chat
 
-An [Obsidian](https://obsidian.md) plugin that lets you ask questions about your Zotero library in plain English and get cited answers — without paying for an API or sending your data to the cloud.
+An [Obsidian](https://obsidian.md) plugin that lets you ask questions about your Zotero library in plain English and get cited answers.
 
-> **Who this is for:** Researchers who use Zotero and Obsidian and want to chat with their library using a free, private AI model running on their own computer.
+> **Who this is for:** Researchers who use Zotero and Obsidian and want to chat with their library using an AI model — with flexible options from free cloud providers to fully local private inference.
 
 ---
 
 ## What it does
 
-You type a question — "What does the literature say about impostor syndrome in PhD students?" — and the plugin searches your Zotero library, finds the most relevant papers, and writes a response with citations. Everything runs locally by default.
+You type a question — "What does the literature say about impostor syndrome in PhD students?" — and the plugin searches your Zotero library, finds the most relevant papers, and writes a response with citations.
+
+---
+
+## Choosing an AI provider
+
+This is the first decision to make, because it affects what you need to install. The plugin supports several providers:
+
+| Provider | Cost | Context window | Quality | Privacy |
+|---|---|---|---|---|
+| **Gemini 2.0 Flash** (recommended) | Free (1,500 req/day) | 1M tokens | Good | Sends data to Google |
+| **Gemini 2.5 Flash** | Free (500 req/day) | 1M tokens | Very good | Sends data to Google |
+| **GitHub Models** (DeepSeek) | Free | ~8k tokens | Very good | Sends data to GitHub/Microsoft |
+| **DeepSeek API** (direct) | ~$0.27/M tokens | 64k tokens | Very good | Sends data to DeepSeek |
+| **Ollama + local model** | Free | Varies | Depends on model | Stays on your computer |
+| **OpenRouter** | Varies | Varies | Varies | Sends data to provider |
+| **Anthropic** (Claude) | Paid | 200k tokens | Excellent | Sends data to Anthropic |
+
+**The practical reality of each option:**
+
+- **Gemini (free tier)** is the easiest starting point for most users. A Google AI Studio API key is free and the context window is large enough for full research papers. [Get a key at aistudio.google.com](https://aistudio.google.com). Gemini 2.5 Pro is also listed as a free-tier model but in practice its daily limit is low enough (~25–50 requests) that even a single paper import can exhaust it.
+
+- **GitHub Models** gives you free access to DeepSeek and other models via your GitHub account. The quality is excellent but the free tier caps input at roughly 8,000 tokens — too small for a full research paper. It works well for chat queries about specific topics, but Smart Import (which sends full paper text) will hit the limit. [Get a token at github.com/settings/tokens](https://github.com/settings/tokens).
+
+- **DeepSeek API (direct)** — DeepSeek's own API at [platform.deepseek.com](https://platform.deepseek.com) is not free but is very cheap: a full research paper costs a fraction of a cent. New accounts receive free credits. This is the best option if you want DeepSeek quality without the GitHub Models context limit.
+
+- **Local models via Ollama** are private and free, but have real limitations. On a Mac with an M1 chip and 16 GB of memory, models large enough to produce good results on academic papers (13B+) are slow, and smaller models (7–8B) often produce lower-quality summaries. If you want to try local models, `qwen3:8b` and `gemma3:12b` are currently the best options at this size. `llama3.2` (the previous default recommendation) is fast but noticeably lower quality for research tasks. Local models are a reasonable choice if privacy is essential or you want to compare results — but they are not recommended as a primary option for most users.
+
+- **OpenRouter** previously offered free access to several models, but now requires credits for most options. It remains useful if you want to switch between many different models with a single API key.
+
+**Not sure where to start?** Get a free Gemini API key and use `gemini-2.0-flash`. You can always switch providers later from the plugin settings.
 
 ---
 
 ## Before you start
 
-You'll need all four of these:
+You'll need:
 
 | Requirement | What it is |
 |---|---|
 | [Zotero](https://www.zotero.org) | Reference manager (you probably already have this) |
 | [Obsidian](https://obsidian.md) | Note-taking app (you probably already have this) |
-| [Ollama](https://ollama.com) | Runs free AI models on your computer |
 | [zotero-mcp](https://github.com/54yyyu/zotero-mcp) | Connects Zotero to AI tools |
+| An AI provider | See [Choosing an AI provider](#choosing-an-ai-provider) above |
+| [Ollama](https://ollama.com) | Only needed if using a local model |
 
 The setup takes about 20–30 minutes the first time, mostly waiting for things to download.
 
 ---
 
-## Step 1 — Install Ollama
+## Step 1 — Set up your AI provider
 
-Ollama lets you run AI models privately on your own Mac. No account required, no data leaves your computer.
+> **Skip this step if you're using Gemini, GitHub Models, DeepSeek API, OpenRouter, or Anthropic.** Those providers only need an API key, which you'll enter in the plugin settings in Step 4. Continue to Step 2.
+
+If you chose a **local model via Ollama**, complete this step first.
 
 1. Go to [ollama.com](https://ollama.com) and click **Download**
 2. Open the downloaded file and install it like any other Mac app
 3. Open **Terminal** (press `⌘ Space`, type "Terminal", press Enter)
-4. Paste this command and press Enter — it downloads a free AI model (~5 GB):
+4. Pull a model. Good options for research tasks on a Mac with 16 GB of memory:
 
    ```
-   ollama pull llama3.2
+   ollama pull qwen3:8b
    ```
 
-   > **Not sure which model to pick?** `llama3.2` is a good default. If your Mac has less than 16 GB of memory, use `llama3.2:3b` instead (smaller and faster). If you have an M2/M3 Mac with 32 GB+, try `mistral` for better results.
-   >
-   > **Have 8 GB of memory or less?** Local models may be too slow or unreliable on machines with limited RAM. Ollama also supports cloud-hosted models, which run on remote servers instead of your computer. A good option is `deepseek-v3.1:671b-cloud` — pull it the same way: `ollama pull deepseek-v3.1:671b-cloud`. You will need to be logged into Ollama for cloud models to work. Alternatively, if you have an [OpenRouter](https://openrouter.ai) API key, you can skip Ollama entirely and select OpenRouter as your provider in Step 4.
+   Or, for better quality at the cost of speed:
+   ```
+   ollama pull gemma3:12b
+   ```
 
-5. Wait for the download to finish (this can take several minutes)
+   > **Why not `llama3.2`?** Llama 3.2 is fast but produces noticeably lower-quality results on academic papers. `qwen3:8b` and `gemma3:12b` are better choices at similar sizes. If your Mac has less than 16 GB of memory, local models may be too slow or produce poor results — a free cloud provider like Gemini is a better fit.
+
+5. Wait for the download to finish (several GB — this can take a few minutes)
 
 You can now close Terminal. Ollama runs quietly in the background whenever you need it.
 
@@ -163,12 +199,18 @@ This plugin isn't in the Obsidian community store yet, so you'll install it usin
    - Open Terminal and run `which zotero-mcp`
    - Copy the result and paste it into the setting
    - **Important:** the path must be absolute — if the result starts with `~`, expand it manually (e.g. `~` becomes `/Users/yourname`)
-3. Under **AI Provider**, select **Ollama**
-4. Make sure the **Ollama URL** field is set to `http://localhost:11434` — this is the default and should already be correct
-5. The **Model** field should say `llama3.2` (or whatever model you downloaded in Step 1)
-6. Click the **X** to close Settings
+3. Under **AI Provider**, select your chosen provider and fill in the details:
 
-> **Using OpenRouter or Claude instead?** If you have an API key for [OpenRouter](https://openrouter.ai) or [Anthropic](https://anthropic.com), you can select those providers and enter your key. OpenRouter gives access to many models including free ones. This is optional — Ollama works great for most purposes.
+   | Provider | What to enter |
+   |---|---|
+   | **Gemini** | Select "Gemini". Paste your Google AI Studio API key. Leave the model as `gemini-2.0-flash` (or change to `gemini-2.5-flash` for better quality). |
+   | **GitHub Models** | Select "GitHub Models". Paste your GitHub personal access token. Leave the model as `deepseek/DeepSeek-V3-0324`. |
+   | **Ollama** | Select "Ollama". The URL should default to `http://localhost:11434`. Set the model to whatever you pulled in Step 1 (e.g. `qwen3:8b`). |
+   | **OpenRouter** | Select "OpenRouter". Paste your OpenRouter API key. Enter a model name (e.g. `deepseek/deepseek-r1`). |
+   | **Anthropic** | Select "Anthropic". Paste your Anthropic API key. |
+
+4. Click **Test connection** to confirm everything is working
+5. Click the **X** to close Settings
 
 ---
 
@@ -294,8 +336,8 @@ This is normal with local models. Larger models are slower. Try `llama3.2:3b` fo
 **"Collection already exists" error**
 This can happen if you also use zotero-mcp with Claude Desktop at the same time. See the [zotero-mcp issue tracker](https://github.com/54yyyu/zotero-mcp/issues) for the latest fix.
 
-**"Ollama 401: unauthorized" error**
-This happens when using a cloud-hosted model through Ollama without being logged in. Open the Ollama app and make sure you are signed into your account, then try again.
+**"Ollama 401: unauthorized" or "GitHub Models 401" error**
+Check that you've entered the correct API key or token in Settings. For GitHub Models, make sure your personal access token has Models access enabled.
 
 **"Error updating database" on startup**
 You may see a Zotero API error in the terminal when zotero-mcp starts. This is non-fatal — the server still runs and your existing paper database is unaffected. It just means the automatic refresh on startup failed. Run `zotero-mcp update-db --fulltext` manually in Terminal if you want to re-index.
@@ -322,9 +364,9 @@ Make sure you completed Step 2e. If you've added papers to Zotero recently, open
 
 ## Privacy
 
-When using Ollama with a local model, everything stays on your computer. Your questions, your papers, and the AI model itself never leave your machine.
+When using Ollama with a local model, everything stays on your computer — your questions, your papers, and the AI model itself never leave your machine.
 
-When using Ollama with a cloud-hosted model (such as `deepseek-v3.1:671b-cloud`), your questions and relevant paper excerpts are sent to the model provider's servers. When using OpenRouter or Claude, the same applies. Check the relevant provider's privacy policy if this matters for your research.
+When using any cloud provider (Gemini, GitHub Models, DeepSeek, OpenRouter, Anthropic), your questions and the relevant paper excerpts retrieved from your library are sent to that provider's servers. The full text of papers is only sent when you use Smart Import or when you have "Papers with full text" set above 0 in settings. Check your provider's privacy policy if this matters for your research.
 
 ---
 
