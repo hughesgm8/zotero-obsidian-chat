@@ -1,5 +1,5 @@
 import { ChildProcess, spawn, execSync } from "child_process";
-import { requestUrl } from "obsidian";
+import * as http from "http";
 
 function getShellPATH(): string {
 	// Obsidian (as a macOS GUI app) doesn't inherit the user's full shell PATH.
@@ -37,6 +37,20 @@ export class MCPServerManager {
 	private stderrLog: string[] = [];
 	private lastError: string | null = null;
 	onUnexpectedExit: (() => void) | null = null;
+
+	/** Probe the MCP endpoint using Node http (not requestUrl — avoids Obsidian hangs). */
+	private probeServer(): Promise<number> {
+		return new Promise((resolve) => {
+			const req = http.request(
+				{ hostname: "127.0.0.1", port: this.port, path: "/mcp", method: "GET",
+				  headers: { "Accept": "application/json" } },
+				(res) => { resolve(res.statusCode ?? 0); res.resume(); }
+			);
+			req.setTimeout(3000, () => { req.destroy(); resolve(0); });
+			req.on("error", () => resolve(0));
+			req.end();
+		});
+	}
 
 	constructor(executablePath: string, port: number) {
 		this.executablePath = executablePath;
@@ -148,20 +162,11 @@ export class MCPServerManager {
 		}
 
 		// Step 2: something is listening — probe it as an MCP server
-		try {
-			const resp = await requestUrl({
-				url: `${this.getBaseUrl()}/mcp`,
-				method: "GET",
-				headers: { "Accept": "application/json, text/event-stream" },
-				throw: false,
-			});
-			if (resp.status > 0) {
-				console.log(`zotero-mcp: reusing server already running on port ${this.port}`);
-				this.usingExternalProcess = true;
-				return true;
-			}
-		} catch {
-			// Port is occupied by something that isn't our MCP server — fall through
+		const status = await this.probeServer();
+		if (status > 0) {
+			console.log(`zotero-mcp: reusing server already running on port ${this.port}`);
+			this.usingExternalProcess = true;
+			return true;
 		}
 
 		return false;
@@ -206,24 +211,10 @@ export class MCPServerManager {
 				);
 			}
 
-			try {
-				// Send a GET with the required Accept header but no session ID.
-				// The server returns a 400 "Missing session ID" immediately
-				// (no hanging SSE stream), which proves it's alive and ready.
-				// Using requestUrl here because the GET returns a finite JSON
-				// response (not SSE), so it won't hang.
-				const resp = await requestUrl({
-					url: `${this.getBaseUrl()}/mcp`,
-					method: "GET",
-					headers: { "Accept": "application/json, text/event-stream" },
-					throw: false,
-				});
-				// Any response (even 400) means the server is up
-				if (resp.status > 0) return;
-			} catch {
-				// Not ready yet, wait and retry
-				await new Promise((resolve) => setTimeout(resolve, pollInterval));
-			}
+			// Use Node http (not requestUrl) — avoids Obsidian hangs on non-2xx responses
+			const status = await this.probeServer();
+			if (status > 0) return;
+			await new Promise((resolve) => setTimeout(resolve, pollInterval));
 		}
 
 		throw new Error(

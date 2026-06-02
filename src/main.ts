@@ -113,8 +113,8 @@ export default class ZoteroMCPChatPlugin extends Plugin {
 		// Settings tab
 		this.addSettingTab(new ZoteroMCPSettingTab(this.app, this));
 
-		// Start MCP server in background
-		await this.startMCPServer();
+		// Start MCP server in background (fire-and-forget so onload doesn't block)
+		this.startMCPServer();
 	}
 
 	async onunload(): Promise<void> {
